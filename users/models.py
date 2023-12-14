@@ -138,7 +138,6 @@ class CustomUser(AbstractUser):
         return f"{self.first_name} {self.last_name}"
 
     def get_role(self):
-        """Return the role of the user."""
         if self.is_farm_owner:
             return "Farm Owner"
         elif self.is_farm_manager:
@@ -175,4 +174,3 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-
