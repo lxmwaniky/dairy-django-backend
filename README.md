@@ -1,5 +1,12 @@
 # Dairy Django Backend
 
+![GitHub top language](https://img.shields.io/github/languages/top/AgriCodeHub/dairy-django-backend)
+![GitHub last commit](https://img.shields.io/github/last-commit/AgriCodeHub/dairy-django-backend)
+![GitHub repo size](https://img.shields.io/github/repo-size/AgriCodeHub/dairy-django-backend)
+![GitHub Stars](https://img.shields.io/github/stars/AgriCodeHub/dairy-django-backend)
+![Pytest](https://img.shields.io/badge/tests-pytest-green)
+
+
 ## Overview
 
 Welcome to the Dairy Django Backend repository! This project aims to develop a robust backend system for managing a dairy farm. The initial focus will be on implementing user authentication and role-based access control to ensure secure and efficient farm management.
@@ -35,6 +42,14 @@ To get started with the Dairy Django Backend, follow these steps:
     python manage.py runserver
 
 5. Access the application at http://localhost:8000 in your web  browser.
+
+
+## Running tests
+We use pytest for testing. To run tests, use the following command:
+
+```bash
+  pytest
+```
 
 ## License
 This project is licensed under the [Apache License 2.0](./LICENSE). Please review the [license file](./LICENSE) for more details.
