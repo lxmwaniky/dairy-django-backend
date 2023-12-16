@@ -27,6 +27,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         ```
         {
             "username": "example_user",
+            "email": "abc@gmail.com",
             "password": "password123",
             "first_name": "Peter",
             "last_name": "Evance",
@@ -48,6 +49,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         model = User
         fields = (
             "id",
+            "email",
             "username",
             "password",
             "first_name",
@@ -107,6 +109,7 @@ class CustomUserSerializer(UserSerializer):
         fields = (
             "id",
             "username",
+            "email",
             "first_name",
             "last_name",
             "phone_number",
