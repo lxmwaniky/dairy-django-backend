@@ -11,6 +11,7 @@ class TestUserCreation:
         serializer = CustomUserCreateSerializer(
             data={
                 "username": "testuser",
+                "email": "abc@gmail.com",
                 "first_name": "John",
                 "last_name": "Doe",
                 "phone_number": "+254712345673",
@@ -37,6 +38,7 @@ class TestUserCreation:
     def test_create_superuser(self):
         superuser = CustomUser.objects.create_superuser(
             username="admin",
+            email="abc@gmail.com",
             first_name="Admin",
             last_name="User",
             phone_number="+254712345678",

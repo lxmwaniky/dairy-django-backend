@@ -1,5 +1,4 @@
 from django.contrib.auth.models import AbstractUser
-from django.utils.text import slugify
 from phonenumber_field.modelfields import PhoneNumberField
 
 from users.choices import *
@@ -13,6 +12,7 @@ class CustomUser(AbstractUser):
     Fields:
     - `username`: A unique character field representing the username of the user.
                   It is limited to a maximum length of 45 characters.
+    - `email`: A unique email field representing the email address of the user.
     - `first_name`: A character field representing the first name of the user.
                      It is limited to a maximum length of 20 characters.
     - `last_name`: A character field representing the last name of the user.
@@ -41,16 +41,10 @@ class CustomUser(AbstractUser):
     - `dismiss_farm_worker()`: Dismisses the user from the farm worker role.
     - `get_full_name()`: Returns the full name of the user.
     - `get_role()`: Returns the role of the user based on their assigned roles.
-    - `get_farm_workers()`: Retrieves all farm workers associated with the user.
-    - `get_team_leaders()`: Retrieves all team leaders associated with the user.
-    - `get_assistant_farm_managers()`: Retrieves all assistant farm managers associated with the user.
-    - `get_farm_managers()`: Retrieves all farm managers associated with the user.
-    - `get_farm_owners()`: Retrieves all farm owners associated with the user.
-    - `generate_username(first_name, last_name)`: Generates a unique username based on the user's first name and last name.
-
     """
 
     username = models.CharField(max_length=45, unique=True)
+    email = models.EmailField(null=True, unique=True)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
     phone_number = PhoneNumberField(max_length=13, unique=True, null=True)
@@ -62,6 +56,7 @@ class CustomUser(AbstractUser):
     is_farm_worker = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = [
+        "email",
         "first_name",
         "last_name",
         "phone_number",
@@ -130,6 +125,8 @@ class CustomUser(AbstractUser):
         self.save()
 
     def dismiss_farm_worker(self):
+        if self.is_team_leader:
+            self.is_team_leader = False
         self.is_farm_worker = False
         self.save()
 
@@ -148,21 +145,6 @@ class CustomUser(AbstractUser):
             return "Team Leader"
         elif self.is_farm_worker:
             return "Farm Worker"
-
-    def get_farm_workers(self):
-        return CustomUser.objects.filter(is_farm_worker=True)
-
-    def get_team_leaders(self):
-        return CustomUser.objects.filter(is_team_leader=True)
-
-    def get_assistant_farm_managers(self):
-        return CustomUser.objects.filter(is_assistant_farm_manager=True)
-
-    def get_farm_managers(self):
-        return CustomUser.objects.filter(is_farm_manager=True)
-
-    def get_farm_owners(self):
-        return CustomUser.objects.filter(is_farm_owner=True)
 
     def clean(self):
         CustomUserValidator.validate_sex(self.sex)
