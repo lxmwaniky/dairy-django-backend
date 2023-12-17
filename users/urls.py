@@ -13,8 +13,8 @@ router.register(r"users", CustomUserViewSet, basename="users")
 # Define URL patterns for the 'users' app
 urlpatterns = [
     # URL for user authentication (login)
-    path("/auth/login/", TokenCreateView.as_view(), name="login"),
+    path("auth/login/", TokenCreateView.as_view(), name="login"),
     # URL for user logout
-    path("/auth/logout/", TokenDestroyView.as_view(), name="logout"),
+    path("auth/logout/", TokenDestroyView.as_view(), name="logout"),
     path("", include(router.urls)),
 ]
