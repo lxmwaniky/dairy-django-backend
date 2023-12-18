@@ -89,6 +89,10 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+# Add the custom validator for CowBreed model
+COW_BREED_VALIDATORS = [
+    'users.validators.CustomCowBreedValidator.validate_breed_name',
+]
 
 # Internationalization settings.
 LANGUAGE_CODE = "en-us"

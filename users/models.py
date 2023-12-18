@@ -156,3 +156,52 @@ class CustomUser(AbstractUser):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
+class CowBreed(models.Model):
+    """
+    CowBreed Model
+
+    Represents the breed of a cow in a Django application.
+
+    Attributes:
+    - breed_name (CharField): The name of the cow breed.
+        Choices are limited to the values defined in BreedChoices.
+
+
+    Usage:
+    1. Create a new CowBreed instance by specifying the breed_name.
+    2. Access and modify the breed_name attribute as needed.
+    
+    Example:
+    ```python
+    # Creating a new CowBreed instance with the default breed_name (FRIESIAN)
+    cow = CowBreed(breed_name=BreedChoices.JERSEY)
+
+    # Accessing and modifying the breed_name attribute
+    cow.breed_name = BreedChoices.JERSEY
+
+    # Saving the instance to the database
+    cow_breed.save()
+    ```
+
+    Note:
+    - Ensure that the choices in BreedChoices match the actual cow breeds supported in the application.
+
+    Choices for breed_name:
+    - FRIESIAN: Friesian cow breed.
+    - JERSEY: Jersey cow breed.
+    - HOLSTEIN: Holstein cow breed.
+    - OTHER: Other or unspecified cow breed.
+
+    """
+
+    breed_name = models.CharField(
+        max_length=20,
+        choices=BreedChoices.choices,
+        blank=False,  # Ensure the field is not blank
+    )
+
+    def save(self, *args, **kwargs):
+        # Validate the breed_name before saving
+        CustomCowBreedValidator.validate_breed_name(self.breed_name)
+        super().save(*args, **kwargs)

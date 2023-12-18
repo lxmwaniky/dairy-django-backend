@@ -10,6 +10,10 @@ app_name = "users"
 router = routers.DefaultRouter()
 router.register(r"users", CustomUserViewSet, basename="users")
 
+# Add a new router for CowBreed
+#cow_breed_router = routers.DefaultRouter()
+#cow_breed_router.register(r"cowbreeds", CowBreedViewSet, basename="cowbreeds")
+
 # Define URL patterns for the 'users' app
 urlpatterns = [
     # URL for user authentication (login)
@@ -17,4 +21,5 @@ urlpatterns = [
     # URL for user logout
     path("auth/logout/", TokenDestroyView.as_view(), name="logout"),
     path("", include(router.urls)),
+    #path("", include(cow_breed_router.urls)),
 ]

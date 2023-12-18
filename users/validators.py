@@ -52,4 +52,37 @@ class CustomUserValidator:
             .exclude(username=username)
             .exists()
         ):
+            
             raise ValidationError("Username already exists.")
+
+class CustomCowBreedValidator:
+    """
+    Helper class for validating fields in the CowBreed model.
+
+    Methods:
+    - `validate_breed_name(breed_name)`: Validates that the breed_name field value is within the specified choices.
+
+    """
+
+    @classmethod
+    def validate_breed_name(cls, breed_name):
+        """
+        Validates that the breed_name field value is within the specified choices.
+
+        Parameters:
+        - `breed_name`: The value of the breed_name field.
+
+        Raises:
+        - `ValidationError`: If the breed_name value is not within the choices or is an empty string.
+
+        """ 
+        from users.choices import BreedChoices
+        if not breed_name:
+            raise ValidationError("Breed name field cannot be empty.")
+
+        valid_choices = ", ".join(map(str, BreedChoices.values))
+
+        if breed_name not in BreedChoices.values:
+            raise ValidationError(
+                f"Invalid value for breed name: '{breed_name}'. It must be one of {valid_choices}."
+        )
