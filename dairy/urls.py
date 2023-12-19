@@ -26,6 +26,7 @@ urlpatterns = [
     path("auth/", include("djoser.urls")),
     # Include URLs from the 'users' app, and set a namespace for clarity
     path("", include("users.urls", namespace="users")),
+    path("core/", include("core.urls", namespace="core")),
     # URL for Swagger documentation with UI
     path(
         "swagger/",
