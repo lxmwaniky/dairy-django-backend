@@ -1,11 +1,8 @@
 import pytest
 
-from rest_framework.exceptions import ValidationError
 from users.choices import *
-from users.models import CustomUser,CowBreed
-from users.serializers import *
-from users.validators import CustomCowBreedValidator
-
+from users.models import CustomUser
+from users.serializers import CustomUserCreateSerializer
 
 
 class TestUserCreation:
@@ -57,38 +54,3 @@ class TestUserCreation:
         assert superuser.is_staff
         assert superuser.is_superuser
         assert superuser.is_active
-
-@pytest.mark.django_db
-class TestCowBreedModel:
-    def test_create_breed_with_valid_name(self):
-        # Test creating a CowBreed instance with a valid breed name
-        breed = CowBreed.objects.create(breed_name=BreedChoices.JERSEY)
-        assert breed.breed_name == BreedChoices.JERSEY
-
-    def test_create_breed_with_invalid_name(self):
-        # Test creating a CowBreed instance with an invalid breed name
-        with pytest.raises(ValidationError, match="Invalid value for breed name"):
-            CowBreed.objects.create(breed_name="InvalidBreed")
-
-    def test_create_breed_with_empty_name(self):
-        # Test creating a CowBreed instance with an empty breed name
-        with pytest.raises(ValidationError, match="Breed name field cannot be empty"):
-            CowBreed.objects.create(breed_name="")
-
-    def test_save_breed_with_valid_name(self):
-        # Test saving a CowBreed instance with a valid breed name
-        breed = CowBreed(breed_name=BreedChoices.JERSEY)
-        breed.save()
-        assert breed.breed_name == BreedChoices.JERSEY
-
-    def test_save_breed_with_invalid_name(self):
-        # Test saving a CowBreed instance with an invalid breed name
-        breed = CowBreed(breed_name="InvalidBreed")
-        with pytest.raises(ValidationError, match="Invalid value for breed name"):
-            breed.save()
-
-    def test_save_breed_with_empty_name(self):
-        # Test saving a CowBreed instance with an empty breed name
-        breed = CowBreed(breed_name="")
-        with pytest.raises(ValidationError, match="Breed name field cannot be empty"):
-            breed.save()

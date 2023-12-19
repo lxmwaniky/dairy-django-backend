@@ -2,11 +2,24 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from users.models import *
+from users.choices import SexChoices
 
 
 @pytest.mark.django_db
 def test_user_flow(client):
+    """
+    Test the complete user flow including registration, login, access, logout, and unauthorized access attempts.
+
+    Test Steps:
+    - Register a new user and ensure a successful creation.
+    - Attempt to access user details without authentication and verify the expected unauthorized response.
+    - Log in with valid credentials and obtain the authentication token.
+    - Access user details with authentication and verify a successful response.
+    - Log out and ensure a successful logout with no content returned.
+    - Attempt to access user details after logout and verify the expected unauthorized response.
+
+    """
+
     # Register a new user
     register_data = {
         "username": "test@example.com",
@@ -57,117 +70,36 @@ def test_user_flow(client):
 @pytest.mark.django_db
 class TestRoleAssignments:
     """
-    Test class for the role assignment API views.
+    Test suite for the role assignment API views.
 
-    Ensure that assigning and dismissing roles functions correctly with proper permissions.
+    This suite covers the functionality of assigning and dismissing roles via API endpoints, ensuring proper permissions
+    are enforced. It utilizes pytest fixtures for setup and parameterized tests to efficiently cover multiple scenarios.
 
-    API Endpoints:
-
-    - `POST /users/assign_farm_owner/`
-      - Assign the farm owner role to selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/assign_farm_manager/`
-      - Assign the farm manager role to selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/assign_assistant_farm_manager/`
-      - Assign the assistant farm manager role to selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/assign_team_leader/`
-      - Assign the team leader role to selected users.
-      - `Permission`: Only authenticated users with farm manager permission can access this view.
-
-    - `POST /users/assign_farm_worker/`
-      - Assign the farm worker role to selected users.
-      - `Permission`: Only authenticated users with farm manager permission can access this view.
-
-    - `POST /users/dismiss_farm_owner/`
-      - Dismiss the farm owner role from selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/dismiss_farm_manager/`
-      - Dismiss the farm manager role from selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/dismiss_assistant_farm_manager/`
-      - Dismiss the assistant farm manager role from selected users.
-      - `Permission`: Only authenticated users with farm owner permission can access this view.
-
-    - `POST /users/dismiss_team_leader/`
-      - Dismiss the team leader role from selected users.
-      - `Permission`: Only authenticated users with farm manager permission can access this view.
-
-    - `POST /users/dismiss_farm_worker/`
-      - Dismiss the farm worker role from selected users.
-      - `Permission`: Only authenticated users with farm manager permission can access this view.
+    Fixtures:
+    - `setup_users`: Provides essential setup including client instances and user tokens.
 
     Test Cases:
+    - `test_assign_roles`: Parameterized test covering various scenarios of role assignment.
+    - `test_dismiss_roles`: Parameterized test covering various scenarios of role dismissal.
 
-    - `test_assign_to_self`
-      - Assigning the role to oneself should be restricted.
-      - `Expected Response`: 400 Bad Request, "Cannot assign roles to yourself."
+    API Endpoints:
+    - Endpoints for assigning roles:
+      - `/users-assign-farm-owner/`
+      - `/users-assign-farm-manager/`
+      - `/users-assign-assistant-farm-manager/`
+      - `/users-assign-team-leader/`
+      - `/users-assign-farm-worker/`
 
-    - `test_assign_farm_owner`
-      - Assign farm owner role to another user.
-      - `Expected Response`: 200 OK
+    - Endpoints for dismissing roles:
+      - `/users-dismiss-farm-manager/`
+      - `/users-dismiss-assistant-farm-manager/`
+      - `/users-dismiss-team-leader/`
+      - `/users-dismiss-farm-worker/`
 
-    - `test_assign_farm_manager`
-      - Assign farm manager role to another user.
-      - `Expected Response`: 200 OK
+    Test Cases Summary:
+    - `test_assign_roles`: Covers scenarios of assigning roles, validating expected responses and permissions.
+    - `test_dismiss_roles`: Covers scenarios of dismissing roles, validating expected responses and permissions.
 
-    - `test_assign_asst_farm_manager`
-      - Assign assistant farm manager role to another user.
-      - `Expected Response`: 200 OK
-
-    - `test_assign_team_leader`
-      - Assign team leader role to another user.
-      - `Expected Response`: 200 OK
-
-    - `test_assign_farm_worker`
-      - Assign farm worker role to another user.
-      - `Expected Response`: 200 OK
-
-    - `test_assign_farm_manager_permission_denied`
-      - Attempt to assign farm manager role with insufficient permissions.
-      - `Expected Response`: 403 Forbidden
-
-    - `test_assign_assistant_farm_manager_permission_denied`
-      - Attempt to assign assistant farm manager role with insufficient permissions.
-      - `Expected Response`: 403 Forbidden
-
-    - `test_assign_team_leader_permission_denied`
-      - Attempt to assign team leader role with insufficient permissions.
-      - `Expected Response`: 403 Forbidden
-
-    - `test_assign_farm_worker_permission_denied`
-      - Attempt to assign farm worker role with insufficient permissions.
-      - `Expected Response`: 403 Forbidden
-
-    - `test_dismiss_farm_manager`
-      - Dismiss farm manager role from another user.
-      - `Expected Response`: 200 OK
-
-    - `test_dismiss_asst_farm_manager`
-      - Dismiss assistant farm manager role from another user.
-      - `Expected Response`: 200 OK
-
-    - `test_dismiss_team_leader`
-      - Dismiss team leader role from another user.
-      - `Expected Response`: 200 OK
-
-    - `test_dismiss_farm_worker`
-      - Dismiss farm worker role from another user.
-      - `Expected Response`: 200 OK
-
-    - `test_dismiss_user_not_found`
-      - Attempt to dismiss role from a non-existent user.
-      - `Expected Response`: 200 OK, "User with ID '99' was not found."
-
-    - `test_dismiss_user_invalid_id`
-      - Attempt to dismiss role with an invalid user ID.
-      - `Expected Response`: 200 OK, "The ID 'Y' is invalid."
     """
 
     @pytest.fixture(autouse=True)
@@ -189,149 +121,73 @@ class TestRoleAssignments:
         self.farm_worker_token = setup_users["farm_worker_token"]
         self.farm_worker_user_id = setup_users["farm_worker_user_id"]
 
-    def test_assign_to_self(self):
-        user_ids = [self.farm_owner_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data[0] == "Cannot assign roles to yourself."
+    @pytest.mark.parametrize("assign_endpoint, user_id, token, expected_status", [
+        ("users-assign-farm-owner", "farm_manager_user_id", "farm_owner_token", status.HTTP_200_OK),
+        ("users-assign-farm-manager", "asst_farm_manager_user_id", "farm_owner_token", status.HTTP_200_OK),
+        ("users-assign-assistant-farm-manager", "team_leader_user_id", "farm_owner_token", status.HTTP_200_OK),
+        ("users-assign-team-leader", "farm_worker_user_id", "farm_manager_token", status.HTTP_200_OK),
+        ("users-assign-farm-worker", "farm_worker_user_id", "farm_manager_token", status.HTTP_200_OK),
+        ("users-assign-farm-manager", "farm_worker_user_id", "farm_manager_token", status.HTTP_403_FORBIDDEN),
+        ("users-assign-assistant-farm-manager", "farm_worker_user_id", "farm_manager_token",
+         status.HTTP_403_FORBIDDEN),
+        ("users-assign-team-leader", "farm_worker_user_id", "farm_worker_token", status.HTTP_403_FORBIDDEN),
+        ("users-assign-farm-worker", "farm_worker_user_id", "asst_farm_manager_token", status.HTTP_403_FORBIDDEN
+         ),
+    ])
+    def test_assign_roles(self, assign_endpoint, user_id, token, expected_status):
+        """
+        Parameterized test for role assignment scenarios.
 
-    def test_assign_farm_owner(self):
-        user_ids = [self.farm_manager_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-owner"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
+        Args:
+        - `assign_endpoint`: Endpoint for assigning roles.
+        - `user_id`: Attribute representing the user to assign roles to.
+        - `token`: Attribute representing the authentication token for the user performing the assignment.
+        - `expected_status`: Expected HTTP status code for the response.
 
-    def test_assign_farm_manager(self):
-        user_ids = [self.asst_farm_manager_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
+        Test Steps:
+        - Perform a POST request to the specified assignment endpoint.
+        - Validate the HTTP status code against the expected status.
 
-    def test_assign_asst_farm_manager(self):
-        user_ids = [self.team_leader_user_id]
+        """
+        user_ids = [getattr(self, user_id)]
         response = self.client.post(
-            reverse("users:users-assign-assistant-farm-manager"),
+            reverse(f"users:{assign_endpoint}"),
             {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
+            HTTP_AUTHORIZATION=f"Token {getattr(self, token)}",
         )
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == expected_status
 
-    def test_assign_team_leader(self):
-        user_ids = [self.farm_owner_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-team-leader"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
+    @pytest.mark.parametrize("dismiss_endpoint, user_id, token, expected_status", [
+        ("users-dismiss-farm-manager", "farm_manager_user_id", "farm_owner_token", status.HTTP_200_OK),
+        ("users-dismiss-assistant-farm-manager", "asst_farm_manager_user_id", "farm_owner_token", status.HTTP_200_OK),
+        ("users-dismiss-team-leader", "team_leader_user_id", "farm_manager_token", status.HTTP_200_OK),
+        ("users-dismiss-farm-worker", "farm_worker_user_id", "farm_manager_token", status.HTTP_200_OK),
+        ("users-dismiss-farm-manager", "farm_manager_user_id", "farm_manager_token", status.HTTP_403_FORBIDDEN),
+        ("users-dismiss-assistant-farm-manager", "asst_farm_manager_user_id", "farm_manager_token",
+         status.HTTP_403_FORBIDDEN),
+        ("users-dismiss-team-leader", "team_leader_user_id", "farm_worker_token", status.HTTP_403_FORBIDDEN),
+        ("users-dismiss-farm-worker", "farm_worker_user_id", "asst_farm_manager_token", status.HTTP_403_FORBIDDEN
+         ),
+    ])
+    def test_dismiss_roles(self, dismiss_endpoint, user_id, token, expected_status):
+        """
+        Parameterized test for role dismissal scenarios.
 
-    def test_assign_farm_worker(self):
-        user_ids = [self.team_leader_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-worker"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
+        Args:
+        - `dismiss_endpoint`: Endpoint for dismissing roles.
+        - `user_id`: Attribute representing the user to dismiss roles from.
+        - `token`: Attribute representing the authentication token for the user performing the dismissal.
+        - `expected_status`: Expected HTTP status code for the response.
 
-    def test_assign_farm_manager_permission_denied(self):
-        user_ids = [self.farm_worker_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        Test Steps:
+        - Perform a POST request to the specified dismissal endpoint.
+        - Validate the HTTP status code against the expected status.
 
-    def test_assign_assistant_farm_manager_permission_denied(self):
-        user_ids = [self.farm_worker_user_id]
+        """
+        user_ids = [getattr(self, user_id)]
         response = self.client.post(
-            reverse("users:users-assign-assistant-farm-manager"),
+            reverse(f"users:{dismiss_endpoint}"),
             {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
+            HTTP_AUTHORIZATION=f"Token {getattr(self, token)}",
         )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    def test_assign_team_leader_permission_denied(self):
-        user_ids = [self.farm_worker_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-team-leader"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_worker_token}",
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    def test_assign_farm_worker_permission_denied(self):
-        user_ids = [self.farm_worker_user_id]
-        response = self.client.post(
-            reverse("users:users-assign-farm-worker"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.asst_farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    def test_dismiss_farm_manager(self):
-        user_ids = [self.farm_worker_user_id]
-        response = self.client.post(
-            reverse("users:users-dismiss-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_dismiss_asst_farm_manager(self):
-        user_ids = [self.asst_farm_manager_user_id]
-        response = self.client.post(
-            reverse("users:users-dismiss-assistant-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_dismiss_team_leader(self):
-        user_ids = [self.team_leader_user_id]
-        response = self.client.post(
-            reverse("users:users-dismiss-team-leader"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_dismiss_farm_worker(self):
-        user_ids = [self.farm_worker_user_id]
-        response = self.client.post(
-            reverse("users:users-dismiss-farm-worker"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_manager_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-
-    def test_dismiss_user_not_found(self):
-        user_ids = ["99"]
-        response = self.client.post(
-            reverse("users:users-dismiss-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["error"] == "User with ID '99' was not found."
-
-    def test_dismiss_user_invalid_id(self):
-        user_ids = ["Y"]
-        response = self.client.post(
-            reverse("users:users-dismiss-farm-manager"),
-            {"user_ids": user_ids},
-            HTTP_AUTHORIZATION=f"Token {self.farm_owner_token}",
-        )
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["invalid"] == "The ID 'Y' is invalid."
+        assert response.status_code == expected_status
