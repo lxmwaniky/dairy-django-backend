@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 
 class CustomUserValidator:
@@ -11,8 +11,8 @@ class CustomUserValidator:
 
     """
 
-    @classmethod
-    def validate_sex(cls, sex):
+    @staticmethod
+    def validate_sex(sex):
         """
         Validates that the sex field value is within the specified choices.
 
@@ -30,11 +30,11 @@ class CustomUserValidator:
 
         if sex not in SexChoices.values:
             raise ValidationError(
-                f"Invalid value for sex: '{sex}'. It must be one of {SexChoices.values}."
+                f"Invalid value for sex: '{sex}'. It must be one of {SexChoices.values}.", code="invalid_sex_choice"
             )
 
-    @classmethod
-    def validate_username(cls, username):
+    @staticmethod
+    def validate_username(username):
         """
         Validates that the username is unique and exists in the database.
 
@@ -48,41 +48,8 @@ class CustomUserValidator:
         from users.models import CustomUser
 
         if (
-            CustomUser.objects.filter(username=username)
-            .exclude(username=username)
-            .exists()
+                CustomUser.objects.filter(username=username)
+                        .exclude(username=username)
+                        .exists()
         ):
-            
-            raise ValidationError("Username already exists.")
-
-class CustomCowBreedValidator:
-    """
-    Helper class for validating fields in the CowBreed model.
-
-    Methods:
-    - `validate_breed_name(breed_name)`: Validates that the breed_name field value is within the specified choices.
-
-    """
-
-    @classmethod
-    def validate_breed_name(cls, breed_name):
-        """
-        Validates that the breed_name field value is within the specified choices.
-
-        Parameters:
-        - `breed_name`: The value of the breed_name field.
-
-        Raises:
-        - `ValidationError`: If the breed_name value is not within the choices or is an empty string.
-
-        """ 
-        from users.choices import BreedChoices
-        if not breed_name:
-            raise ValidationError("Breed name field cannot be empty.")
-
-        valid_choices = ", ".join(map(str, BreedChoices.values))
-
-        if breed_name not in BreedChoices.values:
-            raise ValidationError(
-                f"Invalid value for breed name: '{breed_name}'. It must be one of {valid_choices}."
-        )
+            raise ValidationError("Username already exists.", code="duplicate_username")
