@@ -2,7 +2,7 @@ from django.db import models
 
 from users.choices import SexChoices
 from core.choices import CowBreedChoices
-from core.validators import CowBreedValidator
+from core.validators import CowBreedValidato, CowValidatorr
 from datetime import date
 import uuid
 
@@ -115,11 +115,17 @@ class Cow(models.Model):
         age_in_farm = today.year - introduced_date.year - ((today.month, today.day) < (introduced_date.month, introduced_date.day))
         return age_in_farm
 
+    def clean(self):
+        # Use CowValidator for validation checks
+        CowValidator.validate_category_production_status(self)
+        CowValidator.validate_positive_age(self.age)
+        CowValidator.validate_introduction_date(self.date_introduced_in_farm)
+
     def save(self, *args, **kwargs):
         # Generate a unique tag number using a combination of date and UUID
         if not self.tag_number:
             today_str = date.today().strftime("%Y%m%d")
             uuid_str = str(uuid.uuid4().hex)[:6]  # Use the first 6 characters of UUID
             self.tag_number = f"{today_str}-{uuid_str}"
-
+        self.clean()
         super().save(*args, **kwargs)
