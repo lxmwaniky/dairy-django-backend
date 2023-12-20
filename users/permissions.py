@@ -1,4 +1,4 @@
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, AuthenticationFailed
 from rest_framework.permissions import BasePermission
 
 
@@ -15,7 +15,7 @@ class IsSelfProfile(BasePermission):
     """
 
     message = {
-        "detail": "You do not have permission to perform this action on another user's profile."
+        "error": "You do not have permission to perform this action on another user's profile."
     }
 
     def has_object_permission(self, request, view, obj):
@@ -35,12 +35,16 @@ class IsFarmOwner(BasePermission):
         permission_classes = [IsFarmOwner]
     """
 
-    message = {"detail": "Only farm owners have permission to perform this action."}
+    message = {"error": "Only farm owners have permission to perform this action."}
 
     def has_permission(self, request, view):
         # Check if the current user is a farm owner
         if request.user.is_authenticated and request.user.is_farm_owner:
             return True
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed(
+                {"error": "Authentication credentials were not provided! Please login to proceed."}
+            )
         raise PermissionDenied(self.message)
 
 
@@ -57,15 +61,19 @@ class IsFarmManager(BasePermission):
     """
 
     message = {
-        "detail": "Only farm owners and managers have permission to perform this action."
+        "error": "Only farm owners and managers have permission to perform this action."
     }
 
     def has_permission(self, request, view):
         # Check if the current user is a farm manager
         if request.user.is_authenticated and (
-            request.user.is_farm_manager or request.user.is_farm_owner
+                request.user.is_farm_manager or request.user.is_farm_owner
         ):
             return True
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed(
+                {"error": "Authentication credentials were not provided! Please login to proceed."}
+            )
         raise PermissionDenied(self.message)
 
 
@@ -82,17 +90,21 @@ class IsAssistantFarmManager(BasePermission):
     """
 
     message = {
-        "detail": "Only farm owners, managers, and assistants have permission to perform this action."
+        "error": "Only farm owners, managers, and assistants have permission to perform this action."
     }
 
     def has_permission(self, request, view):
         # Check if the current user is an assistant farm manager
         if request.user.is_authenticated and (
-            request.user.is_assistant_farm_manager
-            or request.user.is_farm_manager
-            or request.user.is_farm_owner
+                request.user.is_assistant_farm_manager
+                or request.user.is_farm_manager
+                or request.user.is_farm_owner
         ):
             return True
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed(
+                {"error": "Authentication credentials were not provided! Please login to proceed."}
+            )
         raise PermissionDenied(self.message)
 
 
@@ -108,17 +120,21 @@ class IsTeamLeader(BasePermission):
         permission_classes = [IsTeamLeader]
     """
 
-    message = {"detail": "Only team leaders have permission to perform this action."}
+    message = {"error": "Only team leaders have permission to perform this action."}
 
     def has_permission(self, request, view):
         # Check if the current user is a team leader
         if request.user.is_authenticated and (
-            request.user.is_team_leader
-            or request.user.is_assistant_farm_manager
-            or request.user.is_farm_manager
-            or request.user.is_farm_owner
+                request.user.is_team_leader
+                or request.user.is_assistant_farm_manager
+                or request.user.is_farm_manager
+                or request.user.is_farm_owner
         ):
             return True
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed(
+                {"error": "Authentication credentials were not provided! Please login to proceed."}
+            )
         raise PermissionDenied(self.message)
 
 
@@ -135,16 +151,20 @@ class IsFarmWorker(BasePermission):
     """
 
     message = {
-        "detail": "Only farm staff and workers have permission to perform this action."
+        "error": "Only farm staff and workers have permission to perform this action."
     }
 
     def has_permission(self, request, view):
         # Check if the current user is a farm worker
         if request.user.is_authenticated and (
-            request.user.is_farm_owner
-            or request.user.is_farm_worker
-            or request.user.is_farm_manager
-            or request.user.is_assistant_farm_manager
+                request.user.is_farm_owner
+                or request.user.is_farm_worker
+                or request.user.is_farm_manager
+                or request.user.is_assistant_farm_manager
         ):
             return True
+        if not request.user.is_authenticated:
+            raise AuthenticationFailed(
+                {"error": "Authentication credentials were not provided! Please login to proceed."}
+            )
         raise PermissionDenied(self.message)

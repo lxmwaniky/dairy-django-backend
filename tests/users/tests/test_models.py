@@ -2,7 +2,7 @@ import pytest
 
 from users.choices import *
 from users.models import CustomUser
-from users.serializers import *
+from users.serializers import CustomUserCreateSerializer
 
 
 class TestUserCreation:
