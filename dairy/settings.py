@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "djoser",
     "corsheaders",
-    "rest_framework_simplejwt",
+    "django_filters",
     "drf_yasg",
     # Custom Apps
     "core",
@@ -44,7 +44,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 TEMPLATES = [
     {
@@ -88,6 +87,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+]
+# Add the custom validator for CowBreed model
+COW_BREED_VALIDATORS = [
+    'users.validators.CustomCowBreedValidator.validate_breed_name',
 ]
 
 # Internationalization settings.

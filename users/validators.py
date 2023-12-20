@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError
 
 
 class CustomUserValidator:
@@ -11,8 +11,8 @@ class CustomUserValidator:
 
     """
 
-    @classmethod
-    def validate_sex(cls, sex):
+    @staticmethod
+    def validate_sex(sex):
         """
         Validates that the sex field value is within the specified choices.
 
@@ -30,11 +30,11 @@ class CustomUserValidator:
 
         if sex not in SexChoices.values:
             raise ValidationError(
-                f"Invalid value for sex: '{sex}'. It must be one of {SexChoices.values}."
+                f"Invalid value for sex: '{sex}'. It must be one of {SexChoices.values}.", code="invalid_sex_choice"
             )
 
-    @classmethod
-    def validate_username(cls, username):
+    @staticmethod
+    def validate_username(username):
         """
         Validates that the username is unique and exists in the database.
 
@@ -48,8 +48,8 @@ class CustomUserValidator:
         from users.models import CustomUser
 
         if (
-            CustomUser.objects.filter(username=username)
-            .exclude(username=username)
-            .exists()
+                CustomUser.objects.filter(username=username)
+                        .exclude(username=username)
+                        .exists()
         ):
-            raise ValidationError("Username already exists.")
+            raise ValidationError("Username already exists.", code="duplicate_username")
