@@ -1,9 +1,18 @@
+from datetime import timedelta
 import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from core.choices import (
+    CowAvailabilityChoices,
+    CowBreedChoices,
+    CowCategoryChoices,
+    CowPregnancyChoices,
+    CowProductionStatusChoices,
+)
 
 from users.choices import SexChoices
+from core.utils import todays_date
 
 
 @pytest.fixture()
@@ -125,3 +134,23 @@ def setup_users():
         "team_leader_token": team_leader_token,
         "farm_worker_token": farm_worker_token,
     }
+
+
+@pytest.fixture
+def setup_cows():
+    """
+    Fixture to create a sample cows object for testing.
+    """
+
+    # breed = CowBreed.objects.create(name=CowBreedChoices.JERSEY)
+    general_cow = {
+        "name": "General Cow",
+        "breed": {"name": CowBreedChoices.JERSEY},
+        "date_of_birth": todays_date - timedelta(days=370),
+        "gender": SexChoices.FEMALE,
+        "availability_status": CowAvailabilityChoices.ALIVE,
+        "current_pregnancy_status": CowPregnancyChoices.OPEN,
+        "category": CowCategoryChoices.HEIFER,
+        "current_production_status": CowProductionStatusChoices.OPEN,
+    }
+    return general_cow
