@@ -21,6 +21,15 @@ Implementing a secure user authentication system to manage access to the farm's 
 
 Introducing role-based access control to assign specific roles to users based on their responsibilities in the farm. This ensures that different team members have appropriate access levels, enhancing security and streamlining operations.
 
+### 3. Core Models for Dairy Logic
+
+Added core models including the CowBreed model and the Cow model, capturing essential information about each cow. Validation checks and field definitions ensure data integrity and consistency.
+
+### 4. Future Features
+
+Planned future features include Farm Inventory Management to further enhance the functionality of the Dairy Django Backend.
+
+
 ## Getting Started
 
 To get started with the Dairy Django Backend, follow these steps:
