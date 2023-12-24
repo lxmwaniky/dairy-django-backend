@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # Custom Apps
     "core",
     "users",
+    "production",
 ]
 
 # Middleware classes. They process requests and responses globally.
