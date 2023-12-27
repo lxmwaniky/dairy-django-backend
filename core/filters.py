@@ -2,6 +2,7 @@ from django_filters import rest_framework as filters
 
 from core.models import Cow, CowBreed
 
+
 class CowBreedFilterSet(filters.FilterSet):
     """
     Filter set for querying CowBreed instances based on specific criteria.
