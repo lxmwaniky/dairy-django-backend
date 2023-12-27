@@ -213,6 +213,7 @@ class CowValidator:
         - `ValidationError`: If the production status is invalid based on the cow's gender, category, age,
          and calf records.
         """
+        from reproduction.models import Pregnancy
 
         if production_status not in CowProductionStatusChoices.values:
             raise ValidationError(

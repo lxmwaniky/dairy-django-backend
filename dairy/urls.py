@@ -27,6 +27,7 @@ urlpatterns = [
     # Include URLs from the 'users' app, and set a namespace for clarity
     path("", include("users.urls", namespace="users")),
     path("core/", include("core.urls", namespace="core")),
+    path("reproduction/", include("reproduction.urls", namespace="reproduction")),
     # URL for Swagger documentation with UI
     path(
         "swagger/",

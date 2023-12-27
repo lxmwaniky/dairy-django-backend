@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     # Custom Apps
     "core",
     "users",
+    "production",
+    "reproduction",
 ]
 
 # Middleware classes. They process requests and responses globally.
@@ -90,7 +92,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 # Add the custom validator for CowBreed model
 COW_BREED_VALIDATORS = [
-    'users.validators.CustomCowBreedValidator.validate_breed_name',
+    "users.validators.CustomCowBreedValidator.validate_breed_name",
 ]
 
 # Internationalization settings.

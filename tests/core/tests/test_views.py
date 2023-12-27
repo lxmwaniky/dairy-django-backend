@@ -296,7 +296,7 @@ class TestCowViewSet:
         ],
     )
     def test_filter_cows_by_field(
-        self, filter_field, filter_value, expected_count, status_code
+            self, filter_field, filter_value, expected_count, status_code
     ):
         serializer = CowSerializer(data=self.general_cow)
         assert serializer.is_valid()
@@ -312,13 +312,13 @@ class TestCowViewSet:
         assert len(response.data) == expected_count
 
     @pytest.mark.parametrize(
-    "ordering_field, expected_order,",
-    [
-        ("date_of_birth", ["asc", "desc"]),
-        ("name", ["asc", "desc"]),
-        ("gender", ["asc", "desc"]),
-        ("breed", ["asc", "desc"]),
-    ],
+        "ordering_field, expected_order",
+        [
+            ("date_of_birth", ["asc", "desc"]),
+            ("name", ["asc", "desc"]),
+            ("gender", ["asc", "desc"]),
+            ("breed", ["asc", "desc"]),
+        ],
     )
     def test_order_cows_by_field(self, ordering_field, expected_order):
         serializer = CowSerializer(data=self.general_cow)
