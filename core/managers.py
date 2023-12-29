@@ -1,7 +1,8 @@
 from django.db import models
 
-from core.choices import CowAvailabilityChoices, CowPregnancyChoices
+from core.choices import CowAvailabilityChoices, CowPregnancyChoices, CowCategoryChoices
 from core.utils import todays_date
+from reproduction.choices import PregnancyOutcomeChoices
 from users.choices import SexChoices
 
 
@@ -75,6 +76,28 @@ class CowManager(models.Manager):
         """
         age_in_days = (todays_date - cow.date_introduced_in_farm).days
         return age_in_days
+
+    @staticmethod
+    def calculate_parity(cow):
+        """
+        Calculates the parity of a female cow based on its successful calvings.
+
+        Args:
+        - `cow`: The cow object.
+
+        Returns:
+        - The parity of the cow.
+        """
+        from reproduction.models import Pregnancy
+
+        successful_calvings = len(
+            list(
+                Pregnancy.objects.filter(
+                    cow=cow, pregnancy_outcome=PregnancyOutcomeChoices.LIVE
+                )
+            )
+        )
+        return successful_calvings
 
     @staticmethod
     def get_available_cows(self):
@@ -157,3 +180,9 @@ class CowManager(models.Manager):
         else:
             calf_records = list(Cow.objects.filter(dam=cow))
         return calf_records
+
+    @staticmethod
+    def mark_a_recently_calved_cow(cow):
+        cow.category = CowCategoryChoices.MILKING_COW
+        cow.current_pregnancy_status = CowPregnancyChoices.CALVED
+        cow.save()
