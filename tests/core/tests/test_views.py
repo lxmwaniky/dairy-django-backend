@@ -135,35 +135,35 @@ class TestCowBreedViewSet:
         assert response.status_code == status_code
         assert len(response.data) == expected_count
 
-        def test_order_cow_breeds_by_multiple_fields(self):
-            """
-            Test ordering cow breeds by multiple fields.
-            """
-            CowBreed.objects.create(name=CowBreedChoices.JERSEY)
-            CowBreed.objects.create(name=CowBreedChoices.GUERNSEY)
-            CowBreed.objects.create(name=CowBreedChoices.CROSSBREED)
-            url = reverse("core:cow-breeds-list") + "?ordering=-name"
-            response = self.client.get(
-                url, HTTP_AUTHORIZATION=f"Token {self.tokens['farm_manager']}"
-            )
-            assert response.status_code == status.HTTP_200_OK
-            assert len(response.data) == 3
-            assert response.data[0]["name"] == CowBreedChoices.JERSEY
-            assert response.data[1]["name"] == CowBreedChoices.GUERNSEY
-            assert response.data[2]["name"] == CowBreedChoices.CROSSBREED
+    def test_order_cow_breeds_by_multiple_fields(self):
+        """
+        Test ordering cow breeds by multiple fields.
+        """
+        CowBreed.objects.create(name=CowBreedChoices.JERSEY)
+        CowBreed.objects.create(name=CowBreedChoices.GUERNSEY)
+        CowBreed.objects.create(name=CowBreedChoices.CROSSBREED)
+        url = reverse("core:cow-breeds-list") + "?ordering=-name"
+        response = self.client.get(
+            url, HTTP_AUTHORIZATION=f"Token {self.tokens['farm_manager']}"
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+        assert response.data[0]["name"] == CowBreedChoices.JERSEY
+        assert response.data[1]["name"] == CowBreedChoices.GUERNSEY
+        assert response.data[2]["name"] == CowBreedChoices.CROSSBREED
 
-        def test_no_results_for_invalid_name(self):
-            """
-            Test that no results are returned for an invalid cow breed name.
-            """
-            url = reverse("core:cow-breeds-list") + "?name=nonexistent"
-            response = self.client.get(
-                url, HTTP_AUTHORIZATION=f"Token {self.tokens['farm_worker']}"
-            )
-            assert response.status_code == status.HTTP_404_NOT_FOUND
-            assert response.data == {
-                "detail": "No cow breed(s) found matching the provided filters."
-            }
+    def test_no_results_for_invalid_name(self):
+        """
+        Test that no results are returned for an invalid cow breed name.
+        """
+        url = reverse("core:cow-breeds-list") + "?name=nonexistent"
+        response = self.client.get(
+            url, HTTP_AUTHORIZATION=f"Token {self.tokens['farm_worker']}"
+        )
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data == {
+            "detail": "No cow breed(s) found matching the provided filters."
+        }
 
 
 @pytest.mark.django_db

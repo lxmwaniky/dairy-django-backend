@@ -113,6 +113,13 @@ class Cow(models.Model):
         return Cow.objects.calculate_age_in_farm(self)
 
     @property
+    def parity(self):
+        """
+        Calculates and returns the parity of the cow.
+        """
+        return Cow.objects.calculate_parity(self)
+
+    @property
     def calf_records(self):
         return Cow.objects.get_calf_records(self)
 
