@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from production.models import Lactation
+from production.models import Lactation, Milk
 from production.validators import LactationValidator
 
 
@@ -74,3 +74,9 @@ class LactationSerializer(serializers.ModelSerializer):
 
         lactation_instance = Lactation.objects.create(**validated_data)
         return lactation_instance
+
+
+class MilkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Milk
+        fields = ("milking_date", "cow", "amount_in_kgs", "lactation")
