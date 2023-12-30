@@ -137,17 +137,18 @@ class MilkViewSet(viewsets.ModelViewSet):
            and a 200 response with an empty list if there are no milk records in the database.
     - retrieve: Retrieve details of a specific milk record.
     - create: Create a new milk record.
-    - update: Not allowed. Raises a MethodNotAllowed exception for PUT requests.
-    - partial_update: Partially update an existing milk record.
-    - destroy: Not allowed. Raises a MethodNotAllowed exception for DELETE requests.
+    - update: Update an existing milk record, not allowed for this action.
+    - partial_update: Partially update an existing milk record, not allowed for this action.
+    - destroy: Delete an existing milk record, not allowed for this action.
 
     Serializer class used for request/response data: MilkSerializer.
 
     Permissions:
-    - For 'list', 'retrieve', 'partial_update': Accessible to all users (farm workers, assistant farm managers, farm managers, farm owners).
-    - For 'create', 'update', 'destroy': Accessible to farm managers and farm owners only.
+    - For 'list', 'retrieve': Accessible to farm managers and farm owners only.
+    - For 'create': Accessible to farm workers, assistant farm managers, farm managers, and farm owners.
+    - For 'update', 'partial_update', 'destroy': Accessible to farm managers and farm owners only.
 
-    Note: Updating and deleting milk records using PUT and DELETE methods are not allowed.
+    Note: Updating and partial updating milk records using PUT and PATCH methods are not allowed.
 
     """
 
@@ -161,33 +162,21 @@ class MilkViewSet(viewsets.ModelViewSet):
         """
         Get the permissions based on the action.
 
-        - For 'create', 'update', 'destroy':
+        - For 'create':
+          Accessible to farm workers, assistant farm managers, farm managers, and farm owners.
+        - For 'update', 'partial_update', 'destroy':
           Only farm managers or farm owners are allowed.
-        - For other actions, accessible to farm workers, assistant farm managers,
-          farm managers, and farm owners.
+        - For 'list', 'retrieve':
+          Accessible to farm managers and farm owners only.
 
         """
-        if self.action in ["create", "update", "destroy"]:
-            permission_classes = [IsFarmManager | IsFarmOwner]
-        else:
+        if self.action == "create":
             permission_classes = [
                 IsFarmWorker | IsAssistantFarmManager | IsFarmManager | IsFarmOwner
             ]
+        else:
+            permission_classes = [IsFarmManager | IsFarmOwner]
         return [permission() for permission in permission_classes]
-
-    def update(self, request, *args, **kwargs):
-        """
-        Not allowed. Raises a MethodNotAllowed exception for PUT requests.
-
-        """
-        raise MethodNotAllowed("PUT")
-
-    def destroy(self, request, *args, **kwargs):
-        """
-        Not allowed. Raises a MethodNotAllowed exception for DELETE requests.
-
-        """
-        raise MethodNotAllowed("DELETE")
 
     def list(self, request, *args, **kwargs):
         """
@@ -203,7 +192,9 @@ class MilkViewSet(viewsets.ModelViewSet):
             if request.query_params:
                 # If query parameters are provided, but there are no matching milk records
                 return Response(
-                    {"detail": "No Milk record(s) found matching the provided filters."},
+                    {
+                        "detail": "No Milk record(s) found matching the provided filters."
+                    },
                     status=status.HTTP_404_NOT_FOUND,
                 )
             else:
@@ -215,4 +206,3 @@ class MilkViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-
