@@ -2,8 +2,10 @@ from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 
-from core.choices import CowCategoryChoices
+from core.choices import CowCategoryChoices, CowAvailabilityChoices
 from core.utils import todays_date
+from production.choices import LactationStageChoices
+from users.choices import SexChoices
 
 
 class LactationValidator:
@@ -111,3 +113,70 @@ class LactationValidator:
             raise ValidationError(
                 code="invalid_lactation_number", message="Invalid lactation number."
             )
+
+
+class MilkValidator:
+    """
+    Provides validation methods for milk records associated with cows.
+
+    Methods:
+    - `validate_amount_in_kgs(amount_in_kgs)`: Validates the amount of milk in kilograms.
+    - `validate_cow_eligibility(cow)`: Validates the eligibility of a cow to record milk based on its status and lactation stage.
+
+    """
+    @staticmethod
+    def validate_amount_in_kgs(amount_in_kgs):
+        """
+        Validates the amount of milk in kilograms.
+
+        Args:
+        - `amount_in_kgs` (float): The amount of milk in kilograms.
+
+        Raises:
+        - `ValidationError` with code "invalid_amount": If the amount is negative or exceeds the maximum expected amount of 35 kgs.
+        """
+        if amount_in_kgs < 0:
+            raise ValidationError("Invalid amount!", code="invalid_amount")
+        if amount_in_kgs > 35:
+            raise ValidationError(
+                f"Amount {amount_in_kgs} Kgs exceeds the maximum expected amount of 35 kgs!",
+                code="exceeds_maximum_amount",
+            )
+
+    @staticmethod
+    def validate_cow_eligibility(cow):
+        """
+        Validates the eligibility of a cow to record milk based on its status and lactation stage.
+
+        Args:
+        - `cow` (Cow): The cow associated with the milk record.
+
+        Raises:
+        - `ValidationError` with codes:
+            - "invalid_availability_status": If the cow is dead or sold.
+            - "male_cow": If the cow is a bull.
+            - "no_active_lactation": If the cow has no active lactation.
+            - "dried_off_cow": If the cow has been dried off.
+            - "previous_lactation_ended": If the previous lactation has ended.
+        """
+        from production.models import Lactation
+
+        if cow.availability_status == CowAvailabilityChoices.DEAD:
+            raise ValidationError("Cannot add milk record for a dead cow.", code="invalid_availability_status")
+
+        if cow.availability_status == CowAvailabilityChoices.SOLD:
+            raise ValidationError("Cannot add milk record for a sold cow.", code="invalid_availability_status")
+
+        if cow.gender != SexChoices.FEMALE:
+            raise ValidationError("This cow is a Bull and cannot produce milk!", code="male_cow")
+
+        try:
+            lactation = Lactation.objects.filter(cow=cow).latest()
+        except Lactation.DoesNotExist:
+            raise ValidationError("Cannot add milk entry, cow has no active lactation", code="no_active_lactation")
+
+        if lactation.lactation_stage == LactationStageChoices.DRY:
+            raise ValidationError("Cannot add milk entry, Cow has been dried off", code="dried_off_cow")
+
+        if lactation.lactation_stage == LactationStageChoices.ENDED:
+            raise ValidationError("Cannot add milk entry, Previous Lactation Ended!", code="previous_lactation_ended")

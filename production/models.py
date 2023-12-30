@@ -2,7 +2,7 @@ from django.db import models
 
 from core.models import Cow
 from production.managers import LactationManager
-from production.validators import LactationValidator
+from production.validators import LactationValidator, MilkValidator
 from reproduction.models import Pregnancy
 
 
@@ -105,3 +105,58 @@ class Lactation(models.Model):
         """
         self.clean()
         super().save(*args, **kwargs)
+
+
+class Milk(models.Model):
+    """
+    Represents a milk record for a cow.
+
+    Attributes:
+    - `milking_date` (datetime): The date and time of the milking.
+    - `cow` (Cow): The cow associated with the milk record.
+    - `amount_in_kgs` (Decimal): The amount of milk produced in kilograms.
+    - `lactation` (Lactation or None): The associated lactation record, if applicable.
+
+    Meta:
+    - `get_latest_by`: Specifies the field used for determining the latest record.
+
+    Methods:
+    - `__str__`: Returns a string representation of the milk record.
+    - `clean`: Performs validation checks before saving the milk record.
+    - `save`: Overrides the save method to ensure validation before saving.
+
+    Raises:
+    - `ValidationError`: If milk record validation fails.
+    """
+
+    class Meta:
+        get_latest_by = "-milking_date"
+
+    milking_date = models.DateTimeField(auto_now_add=True)
+    cow = models.ForeignKey(Cow, on_delete=models.CASCADE, related_name="milk_records")
+    amount_in_kgs = models.DecimalField(default=0, max_digits=4, decimal_places=2)
+    lactation = models.ForeignKey(Lactation, on_delete=models.CASCADE, null=True, editable=False)
+
+    def __str__(self):
+        """
+        Returns a string representation of the milk record.
+        """
+        return f"Milk record of cow {self.cow.name} on {self.milking_date.strftime('%Y-%m-%d %H:%M:%S')}"
+
+    def clean(self):
+        """
+        Performs validation checks before saving the milk record.
+
+        Raises:
+        - `ValidationError`: If milk record validation fails.
+        """
+        MilkValidator.validate_amount_in_kgs(self.amount_in_kgs)
+        MilkValidator.validate_cow_eligibility(self.cow)
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides the save method to ensure validation before saving.
+        """
+        self.clean()
+        super().save(*args, **kwargs)
+
