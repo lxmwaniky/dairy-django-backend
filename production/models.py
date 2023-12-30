@@ -116,6 +116,17 @@ class Milk(models.Model):
     - `cow` (Cow): The cow associated with the milk record.
     - `amount_in_kgs` (Decimal): The amount of milk produced in kilograms.
     - `lactation` (Lactation or None): The associated lactation record, if applicable.
+
+    Meta:
+    - `get_latest_by`: Specifies the field used for determining the latest record.
+
+    Methods:
+    - `__str__`: Returns a string representation of the milk record.
+    - `clean`: Performs validation checks before saving the milk record.
+    - `save`: Overrides the save method to ensure validation before saving.
+
+    Raises:
+    - `ValidationError`: If milk record validation fails.
     """
 
     class Meta:
@@ -148,5 +159,4 @@ class Milk(models.Model):
         """
         self.clean()
         super().save(*args, **kwargs)
-
 

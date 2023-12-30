@@ -77,6 +77,38 @@ class LactationSerializer(serializers.ModelSerializer):
 
 
 class MilkSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Milk model.
+
+    Fields:
+    - `milking_date`: A date field representing the date of milking.
+    - `cow`: A nested serializer field representing the cow associated with the milk record.
+    - `amount_in_kgs`: A decimal field representing the amount of milk produced in kilograms.
+    - `lactation`: A nested serializer field representing the associated lactation record.
+
+    Meta:
+    - `model`: The Milk model for which the serializer is defined.
+    - `fields`: The fields to include in the serialized representation.
+
+    Usage:
+        Use this serializer to convert Milk model instances to JSON representations
+        and vice versa.
+
+    Example:
+        ```
+        class Milk(models.Model):
+            milking_date = models.DateField()
+            cow = models.ForeignKey(Cow, on_delete=models.CASCADE)
+            amount_in_kgs = models.DecimalField(max_digits=5, decimal_places=2)
+            lactation = models.ForeignKey(Lactation, on_delete=models.CASCADE)
+
+        class MilkSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Milk
+                fields = ("milking_date", "cow", "amount_in_kgs", "lactation")
+        ```
+    """
+
     class Meta:
         model = Milk
         fields = ("milking_date", "cow", "amount_in_kgs", "lactation")
