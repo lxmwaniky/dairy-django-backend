@@ -5,11 +5,18 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.choices import CowBreedChoices, CowAvailabilityChoices, CowPregnancyChoices, CowCategoryChoices, \
-    CowProductionStatusChoices
+from core.choices import (
+    CowBreedChoices,
+    CowAvailabilityChoices,
+    CowPregnancyChoices,
+    CowCategoryChoices,
+    CowProductionStatusChoices,
+)
+from core.models import Cow
 from core.serializers import CowSerializer
 from core.utils import todays_date
 from reproduction.choices import PregnancyOutcomeChoices, PregnancyStatusChoices
+from reproduction.serializers import PregnancySerializer
 from users.choices import SexChoices
 
 
@@ -177,9 +184,42 @@ def setup_pregnancy_to_lactation_data():
 
     pregnancy_to_lactation_data = {
         "cow": cow.id,
-        "start_date": todays_date - timedelta(days=380),
-        "date_of_calving": todays_date - timedelta(days=101),
+        "start_date": todays_date - timedelta(days=370),
+        "date_of_calving": todays_date - timedelta(days=100),
         "pregnancy_status": PregnancyStatusChoices.CONFIRMED,
-        "pregnancy_outcome": PregnancyOutcomeChoices.STILLBORN
+        "pregnancy_outcome": PregnancyOutcomeChoices.STILLBORN,
     }
     return pregnancy_to_lactation_data
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def setup_milk_data():
+    general_cow = {
+        "name": "General Cow",
+        "breed": {"name": CowBreedChoices.AYRSHIRE},
+        "date_of_birth": todays_date - timedelta(days=700),
+        "gender": SexChoices.FEMALE,
+        "availability_status": CowAvailabilityChoices.ALIVE,
+        "current_pregnancy_status": CowPregnancyChoices.OPEN,
+        "category": CowCategoryChoices.HEIFER,
+        "current_production_status": CowProductionStatusChoices.OPEN,
+    }
+
+    serializer = CowSerializer(data=general_cow)
+    assert serializer.is_valid()
+    cow = serializer.save()
+
+    pregnancy_to_lactation_data = {
+        "cow": cow.id,
+        "start_date": todays_date - timedelta(days=280),
+        "date_of_calving": todays_date,
+        "pregnancy_status": PregnancyStatusChoices.CONFIRMED,
+        "pregnancy_outcome": PregnancyOutcomeChoices.LIVE
+    }
+    serializer2 = PregnancySerializer(data=pregnancy_to_lactation_data)
+    assert serializer2.is_valid()
+    serializer2.save()
+
+    milk_data = {"cow": cow.id, "amount_in_kgs": 17}
+    return milk_data
