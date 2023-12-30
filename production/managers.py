@@ -31,8 +31,8 @@ class LactationManager(models.Manager):
         If the lactation has ended, return the difference between the end date and start date.
         If the lactation is ongoing, return the difference between the current date and start date.
         """
-        if lactation.end_date:
-            return (lactation.end_date - lactation.start_date).days
+        if lactation.actual_end_date:
+            return (lactation.actual_end_date - lactation.start_date).days
         else:
             return (todays_date - lactation.start_date).days
 
@@ -42,7 +42,7 @@ class LactationManager(models.Manager):
         """
         days_in_lactation = self.days_in_lactation(lactation)
 
-        if lactation.end_date:
+        if lactation.actual_end_date:
             return LactationStageChoices.ENDED
         elif days_in_lactation <= 100:
             return LactationStageChoices.EARLY
@@ -56,6 +56,6 @@ class LactationManager(models.Manager):
     @staticmethod
     def lactation_end_date_formatted(lactation):
         if lactation.end_date:
-            return lactation.end_date.strftime("%Y-%m-%d")
+            return lactation.actual_end_date.strftime("%Y-%m-%d")
         else:
             return "Ongoing"

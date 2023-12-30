@@ -2,8 +2,10 @@ from datetime import timedelta
 
 from django.core.exceptions import ValidationError
 
-from core.choices import CowCategoryChoices
+from core.choices import CowCategoryChoices, CowAvailabilityChoices
 from core.utils import todays_date
+from production.choices import LactationStageChoices
+from users.choices import SexChoices
 
 
 class LactationValidator:
@@ -111,3 +113,47 @@ class LactationValidator:
             raise ValidationError(
                 code="invalid_lactation_number", message="Invalid lactation number."
             )
+
+
+class MilkValidator:
+    @staticmethod
+    def validate_amount_in_kgs(amount_in_kgs):
+        if amount_in_kgs < 0:
+            raise ValidationError("Invalid amount!")
+        if amount_in_kgs > 35:
+            raise ValidationError(
+                f"Amount {amount_in_kgs} Kgs exceeds the maximum expected amount of 35 kgs!"
+            )
+
+    @staticmethod
+    def validate_cow_eligibility(cow):
+        from production.models import Lactation
+
+        if cow.availability_status == CowAvailabilityChoices.DEAD:
+            raise ValidationError("Cannot add milk record for a dead cow.")
+
+        if cow.availability_status == CowAvailabilityChoices.SOLD:
+            raise ValidationError("Cannot add milk record for sold cow.")
+
+        if cow.gender != SexChoices.FEMALE:
+            raise ValidationError("This cow is a Bull and cannot produce milk!")
+
+        try:
+            lactation = Lactation.objects.filter(cow=cow).latest()
+        except Lactation.DoesNotExist:
+            raise ValidationError("Cannot add milk entry, cow has no active lactation")
+
+        if lactation.lactation_stage == LactationStageChoices.DRY:
+            raise ValidationError("Cannot add milk entry, Cow has been dried off")
+
+        if lactation.lactation_stage == LactationStageChoices.ENDED:
+            raise ValidationError("Cannot add milk entry, Previous Lactation Ended!")
+
+
+    # @staticmethod
+    # def validate_milk_records_per_day(cow, milking_date):
+    #
+    #     today_milk_records = cow.milk_records.filter(milking_date=milking_date)
+    #     print("**************************************")
+    #     if today_milk_records.count() >= 2:
+    #         raise ValidationError("A cow can only have two milk records per day.")
