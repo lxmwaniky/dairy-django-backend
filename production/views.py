@@ -137,9 +137,9 @@ class MilkViewSet(viewsets.ModelViewSet):
            and a 200 response with an empty list if there are no milk records in the database.
     - retrieve: Retrieve details of a specific milk record.
     - create: Create a new milk record.
-    - update: Update an existing milk record, not allowed for this action.
-    - partial_update: Partially update an existing milk record, not allowed for this action.
-    - destroy: Delete an existing milk record, not allowed for this action.
+    - update: Update an existing milk record.
+    - partial_update: Partially update an existing milk record.
+    - destroy: Delete an existing milk record.
 
     Serializer class used for request/response data: MilkSerializer.
 
@@ -148,7 +148,6 @@ class MilkViewSet(viewsets.ModelViewSet):
     - For 'create': Accessible to farm workers, assistant farm managers, farm managers, and farm owners.
     - For 'update', 'partial_update', 'destroy': Accessible to farm managers and farm owners only.
 
-    Note: Updating and partial updating milk records using PUT and PATCH methods are not allowed.
 
     """
 
