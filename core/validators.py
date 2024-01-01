@@ -1,6 +1,11 @@
 from django.core.exceptions import ValidationError
 
-from core.choices import CowAvailabilityChoices, CowCategoryChoices, CowPregnancyChoices, CowProductionStatusChoices
+from core.choices import (
+    CowAvailabilityChoices,
+    CowCategoryChoices,
+    CowPregnancyChoices,
+    CowProductionStatusChoices,
+)
 from core.utils import todays_date
 from users.choices import SexChoices
 
@@ -123,7 +128,7 @@ class CowValidator:
 
     @staticmethod
     def validate_pregnancy_status(
-            cow, age, pregnancy_status, availability_status, gender
+        cow, age, pregnancy_status, availability_status, gender
     ):
         """
         Validates the pregnancy status of the cow based on its age, availability status, and gender.
@@ -147,20 +152,36 @@ class CowValidator:
             )
 
         if (
-                availability_status == CowAvailabilityChoices.DEAD
-                and pregnancy_status != CowPregnancyChoices.UNAVAILABLE
+            availability_status == CowAvailabilityChoices.DEAD
+            and pregnancy_status != CowPregnancyChoices.UNAVAILABLE
         ):
             raise ValidationError(
                 f"Dead cows can only have an 'Unavailable' status. You cannot set them as {pregnancy_status}."
             )
 
         if (
-                gender == SexChoices.MALE
-                and pregnancy_status != CowPregnancyChoices.UNAVAILABLE
+            gender == SexChoices.MALE
+            and pregnancy_status != CowPregnancyChoices.UNAVAILABLE
         ):
             raise ValidationError(
                 f"Male cows can only have an 'Unavailable' status. You cannot set them as {pregnancy_status}."
             )
+
+        # This will be checked out since there is a possibility of incorrect data entry where a cow born in the farm
+        # is marked as pregnant with no confirmed pregnancy record
+
+
+        # if (
+        #     not cow.is_bought
+        #     and cow.current_pregnancy_status == CowPregnancyChoices.PREGNANT
+        # ):
+        #     if (
+        #         Pregnancy.objects.filter(
+        #             cow=cow, pregnancy_status=PregnancyStatusChoices.CONFIRMED
+        #         ).count()
+        #         < 1
+        #     ):
+        #         raise ValidationError("This cow is not pregnant!")
 
     @staticmethod
     def validate_gender_update(pk, gender):
@@ -195,9 +216,7 @@ class CowValidator:
             raise ValidationError("The dam should be a female cow.")
 
     @staticmethod
-    def validate_production_status(
-            production_status, gender, category, age, calf_records, is_bought, cow
-    ):
+    def validate_production_status_1(production_status, gender, age):
         """
         Validates the production status of the cow based on its gender, category, age, and calf records.
 
@@ -222,58 +241,90 @@ class CowValidator:
 
         if gender == SexChoices.MALE:
             if age <= 90:
-                if production_status != CowProductionStatusChoices.CALF:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED or CowProductionStatusChoices.CALF
+                ]:
                     raise ValidationError(
                         f"Male calves under 90 days old should have the 'Calf' production status, "
                         f"not '{production_status}'."
                     )
             elif 90 < age <= 180:
-                if production_status != CowProductionStatusChoices.WEANER:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.WEANER,
+                ]:
                     raise ValidationError(
                         f"Young male cows between 91 and 180 days old should have the 'Weaner' production status, "
                         f"not '{production_status}'."
                     )
             elif 180 < age <= 365:
-                if production_status != CowProductionStatusChoices.YOUNG_BULL:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.YOUNG_BULL,
+                ]:
                     raise ValidationError(
                         f"Young male cows between 181 and 365 days old should have the 'Young Bull' production status, "
                         f"not '{production_status}'."
                     )
             elif 365 < age <= 730:
-                if production_status != CowProductionStatusChoices.BULL:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.BULL,
+                ]:
                     raise ValidationError(
                         f"Male cows between 1 and 2 years old should have the 'Bull' production status, "
                         f"not '{production_status}'."
                     )
             elif age > 730:
-                if production_status != CowProductionStatusChoices.MATURE_BULL:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.MATURE_BULL,
+                ]:
                     raise ValidationError(
                         f"Male cows over 2 years old should have the 'Mature Bull' production status, "
                         f"not '{production_status}'."
                     )
         else:  # Female cow
             if age <= 90:
-                if production_status != CowProductionStatusChoices.CALF:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.CALF,
+                ]:
                     raise ValidationError(
                         f"Female calves under 90 days should have the 'Calf' production status, "
                         f"not '{production_status}'."
                     )
             elif 90 < age <= 180:
-                if production_status != CowProductionStatusChoices.WEANER:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.WEANER,
+                ]:
                     raise ValidationError(
                         f"Female calves between 91 and 180 days should have the 'Weaner' production status, "
                         f"not '{production_status}'."
                     )
             elif 180 < age <= 365:
-                if production_status != CowProductionStatusChoices.YOUNG_HEIFER:
+                if production_status not in [
+                    CowProductionStatusChoices.CULLED,
+                    CowProductionStatusChoices.YOUNG_HEIFER,
+                ]:
                     raise ValidationError(
                         f"Young female cows between 181 and 365 days should have the 'Young Heifer' production status, "
                         f"not '{production_status}'."
                     )
-            elif age > 365:
+
+    @staticmethod
+    def validate_production_status_2(
+        production_status, gender, category, age, calf_records, is_bought, cow
+    ):
+        from reproduction.models import Pregnancy
+
+        if gender == SexChoices.FEMALE:
+            if age > 365:
                 if category == CowCategoryChoices.HEIFER:
                     if is_bought:
                         if production_status not in [
+                            CowProductionStatusChoices.CULLED,
                             CowProductionStatusChoices.OPEN,
                             CowProductionStatusChoices.PREGNANT_NOT_LACTATING,
                         ]:
@@ -283,6 +334,7 @@ class CowValidator:
                             )
                     else:
                         if production_status not in [
+                            CowProductionStatusChoices.CULLED,
                             CowProductionStatusChoices.OPEN,
                             CowProductionStatusChoices.PREGNANT_NOT_LACTATING,
                             CowProductionStatusChoices.CULLED,
@@ -295,6 +347,7 @@ class CowValidator:
                 elif category == CowCategoryChoices.MILKING_COW:
                     if is_bought:
                         if production_status not in [
+                            CowProductionStatusChoices.CULLED,
                             CowProductionStatusChoices.OPEN,
                             CowProductionStatusChoices.PREGNANT_AND_LACTATING,
                             CowProductionStatusChoices.DRY,
@@ -305,15 +358,15 @@ class CowValidator:
                             )
                     else:
                         if (
-                                any(calf_records)
-                                or len(list(Pregnancy.objects.filter(cow=cow))) > 0
+                            any(calf_records)
+                            or len(list(Pregnancy.objects.filter(cow=cow))) > 0
                         ):
                             if production_status not in [
+                                CowProductionStatusChoices.CULLED,
                                 CowProductionStatusChoices.OPEN,
                                 CowProductionStatusChoices.DRY,
                                 CowProductionStatusChoices.PREGNANT_NOT_LACTATING,
                                 CowProductionStatusChoices.PREGNANT_AND_LACTATING,
-                                CowProductionStatusChoices.CULLED,
                             ]:
                                 raise ValidationError(
                                     f"Female cows with calf records should have one of the following production "
@@ -327,3 +380,56 @@ class CowValidator:
                             )
                 else:
                     raise ValidationError(f"Invalid cow category: '{category}'.")
+
+    @staticmethod
+    def validate_age_category(age, category, gender, calf_records, is_bought, cow):
+        from reproduction.models import Pregnancy
+
+        if category not in CowCategoryChoices.values:
+            raise ValidationError(f"Invalid cow category: ({category}).")
+
+        if age < 90:
+            if category != CowCategoryChoices.CALF:
+                raise ValidationError(
+                    "Cows under 90 days should have the 'Calf' category."
+                )
+        elif 90 <= age <= 180:
+            if category != CowCategoryChoices.WEANER:
+                raise ValidationError(
+                    f"Cows between 90 and 180 days should have the 'Weaner' category. Not '{category}' "
+                )
+        elif age > 180:
+            if is_bought and gender == SexChoices.FEMALE:
+                if category not in [
+                    CowCategoryChoices.HEIFER,
+                    CowCategoryChoices.MILKING_COW,
+                ]:
+                    raise ValidationError(
+                        f"Bought cows at {round(age / 30.417)} months old should have the 'Heifer' or 'Milking Cow' "
+                        f"category, Not: ({category}) "
+                    )
+            elif is_bought and gender == SexChoices.MALE:
+                if category != CowCategoryChoices.BULL:
+                    raise ValidationError(
+                        f"Bought bulls at {round(age / 30.417)} months old should have the 'Bull' category, Not: ({category}) "
+                    )
+            else:
+                if gender == SexChoices.FEMALE:
+                    if (
+                        any(calf_records)
+                        or len(list(Pregnancy.objects.filter(cow=cow))) > 0
+                    ):
+                        if category != CowCategoryChoices.MILKING_COW:
+                            raise ValidationError(
+                                f"Cows with calf records should have the 'Milking Cow' category, Not: ({category})"
+                            )
+                    else:
+                        if category != CowCategoryChoices.HEIFER:
+                            raise ValidationError(
+                                f"Cows with no calf history should have the 'Heifer' category, Not: ({category})"
+                            )
+                else:
+                    if category != CowCategoryChoices.BULL:
+                        raise ValidationError(
+                            f"Male cows should have the 'Bull' category, Not '{category}'"
+                        )
