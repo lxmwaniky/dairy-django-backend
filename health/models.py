@@ -1,6 +1,7 @@
 from django.db import models
 
 from core.models import Cow
+from health.choices import CullingReasonChoices
 from health.validators import WeightRecordValidator
 
 
@@ -30,7 +31,9 @@ class WeightRecord(models.Model):
         """
         Returns a string representation of the weight record.
         """
-        return f"{self.cow} - Weight: {self.weight_in_kgs} kgs - Date: {self.date_taken}"
+        return (
+            f"{self.cow} - Weight: {self.weight_in_kgs} kgs - Date: {self.date_taken}"
+        )
 
     def clean(self):
         """
@@ -41,7 +44,9 @@ class WeightRecord(models.Model):
         """
         WeightRecordValidator.validate_weight(self.weight_in_kgs)
         WeightRecordValidator.validate_cow_availability_status(self.cow)
-        WeightRecordValidator.validate_frequency_of_weight_records(self.date_taken, self.cow)
+        WeightRecordValidator.validate_frequency_of_weight_records(
+            self.date_taken, self.cow
+        )
 
     def save(self, *args, **kwargs):
         """
@@ -50,3 +55,28 @@ class WeightRecord(models.Model):
         self.clean()
         super().save(*args, **kwargs)
 
+
+class CullingRecord(models.Model):
+    """
+    Represents a culling record for a cow.
+
+    Attributes:
+    - `cow` (Cow): The cow associated with the culling record.
+    - `reason` (str): The reason for culling, chosen from predefined choices.
+    - `notes` (str): Additional notes or comments about the culling.
+    - `date_carried` (Date): The date when the culling record was created.
+
+    Methods:
+    - `__str__`: Returns a string representation of the culling record.
+    """
+
+    cow = models.OneToOneField(Cow, on_delete=models.CASCADE, related_name="culling_record")
+    reason = models.CharField(max_length=35, choices=CullingReasonChoices.choices)
+    notes = models.TextField(null=True, max_length=100)
+    date_carried = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        """
+        Returns a string representation of the culling record.
+        """
+        return f"CullingRecord for {self.cow} - Reason: {self.reason} - Date: {self.date_carried}"
