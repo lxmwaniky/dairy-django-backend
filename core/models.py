@@ -133,11 +133,19 @@ class Cow(models.Model):
         """
 
         if self.pk:
-            CowValidator.validate_production_status(
+            CowValidator.validate_production_status_2(
                 self.current_production_status,
                 self.gender,
                 self.category,
                 self.age,
+                self.calf_records,
+                self.is_bought,
+                self,
+            )
+            CowValidator.validate_age_category(
+                self.age,
+                self.category,
+                self.gender,
                 self.calf_records,
                 self.is_bought,
                 self,
@@ -153,6 +161,11 @@ class Cow(models.Model):
             CowValidator.validate_cow_age(self.age, self.date_of_birth)
             CowValidator.validate_gender_update(self.pk, self.gender)
             CowValidator.validate_sire_dam_relationship(self.sire, self.dam)
+            CowValidator.validate_production_status_1(
+                self.current_production_status,
+                self.gender,
+                self.age,
+            )
             CowValidator.validate_pregnancy_status(
                 self,
                 self.age,
