@@ -11,6 +11,7 @@ from core.choices import (
     CowProductionStatusChoices,
 )
 from core.serializers import CowSerializer
+from health.choices import CullingReasonChoices
 
 from users.choices import SexChoices
 from core.utils import todays_date
@@ -157,3 +158,28 @@ def setup_weight_record_data():
 
     weight_data = {"cow": cow.id, "weight_in_kgs": 1150}
     return weight_data
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def setup_culling_record_data():
+    general_cow = {
+        "name": "General Cow",
+        "breed": {"name": CowBreedChoices.AYRSHIRE},
+        "date_of_birth": todays_date - timedelta(days=370),
+        "gender": SexChoices.FEMALE,
+        "availability_status": CowAvailabilityChoices.ALIVE,
+        "current_pregnancy_status": CowPregnancyChoices.PREGNANT,
+        "category": CowCategoryChoices.HEIFER,
+        "current_production_status": CowProductionStatusChoices.PREGNANT_NOT_LACTATING,
+    }
+
+    serializer = CowSerializer(data=general_cow)
+    assert serializer.is_valid()
+    cow = serializer.save()
+
+    culling_data = {
+        "cow": cow.id,
+        "reason": CullingReasonChoices.COST_OF_CARE,
+    }
+    return culling_data

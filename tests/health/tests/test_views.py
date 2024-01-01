@@ -2,7 +2,8 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from health.serializers import WeightRecordSerializer
+from health.choices import CullingReasonChoices
+from health.serializers import WeightRecordSerializer, CullingRecordSerializer
 
 
 @pytest.mark.django_db
@@ -94,6 +95,100 @@ class TestWeightRecordViewSet:
 
         response = self.client.delete(
             reverse("health:weight-records-detail", kwargs={"pk": weight_record.pk}),
+            HTTP_AUTHORIZATION=f"Token {self.tokens[user_type]}",
+        )
+        assert response.status_code == expected_status
+
+
+@pytest.mark.django_db
+class TestCullingRecordViewSet:
+    @pytest.fixture(autouse=True)
+    def setup(self, setup_users, setup_culling_record_data):
+        self.client = setup_users["client"]
+        self.tokens = {
+            "farm_owner": setup_users["farm_owner_token"],
+            "farm_manager": setup_users["farm_manager_token"],
+            "asst_farm_manager": setup_users["asst_farm_manager_token"],
+            "team_leader": setup_users["team_leader_token"],
+            "farm_worker": setup_users["farm_worker_token"],
+        }
+
+        self.culling_data = setup_culling_record_data
+
+    @pytest.mark.parametrize(
+        "user_type, expected_status",
+        [
+            ("farm_owner", status.HTTP_201_CREATED),
+            ("farm_manager", status.HTTP_201_CREATED),
+            ("asst_farm_manager", status.HTTP_403_FORBIDDEN),
+            ("farm_worker", status.HTTP_403_FORBIDDEN),
+        ],
+    )
+    def test_create_culling_record(self, user_type, expected_status):
+        response = self.client.post(
+            reverse("health:culling-records-list"),
+            data=self.culling_data,
+            format="json",
+            HTTP_AUTHORIZATION=f"Token {self.tokens[user_type]}",
+        )
+        assert response.status_code == expected_status
+
+    @pytest.mark.parametrize(
+        "user_type, expected_status",
+        [
+            ("farm_owner", status.HTTP_200_OK),
+            ("farm_manager", status.HTTP_200_OK),
+            ("asst_farm_manager", status.HTTP_403_FORBIDDEN),
+            ("farm_worker", status.HTTP_403_FORBIDDEN),
+        ],
+    )
+    def test_retrieve_culling_record(self, user_type, expected_status):
+        response = self.client.get(
+            reverse("health:culling-records-list"),
+            format="json",
+            HTTP_AUTHORIZATION=f"Token {self.tokens[user_type]}",
+        )
+        assert response.status_code == expected_status
+
+    @pytest.mark.parametrize(
+        "user_type, expected_status",
+        [
+            ("farm_owner", status.HTTP_405_METHOD_NOT_ALLOWED),
+            ("farm_manager", status.HTTP_405_METHOD_NOT_ALLOWED),
+            ("asst_farm_manager", status.HTTP_403_FORBIDDEN),
+            ("farm_worker", status.HTTP_403_FORBIDDEN),
+        ],
+    )
+    def test_update_culling_record(self, user_type, expected_status):
+        serializer = CullingRecordSerializer(data=self.culling_data)
+        assert serializer.is_valid()
+        culling_record = serializer.save()
+        updated_reason = {"reason": CullingReasonChoices.INJURIES}
+
+        response = self.client.patch(
+            reverse("health:culling-records-detail", kwargs={"pk": culling_record.pk}),
+            data=updated_reason,
+            format="json",
+            HTTP_AUTHORIZATION=f"Token {self.tokens[user_type]}",
+        )
+        assert response.status_code == expected_status
+
+    @pytest.mark.parametrize(
+        "user_type, expected_status",
+        [
+            ("farm_owner", status.HTTP_204_NO_CONTENT),
+            ("farm_manager", status.HTTP_204_NO_CONTENT),
+            ("asst_farm_manager", status.HTTP_403_FORBIDDEN),
+            ("farm_worker", status.HTTP_403_FORBIDDEN),
+        ],
+    )
+    def test_delete_weight_record(self, user_type, expected_status):
+        serializer = CullingRecordSerializer(data=self.culling_data)
+        assert serializer.is_valid()
+        culling_record = serializer.save()
+
+        response = self.client.delete(
+            reverse("health:culling-records-detail", kwargs={"pk": culling_record.pk}),
             HTTP_AUTHORIZATION=f"Token {self.tokens[user_type]}",
         )
         assert response.status_code == expected_status
