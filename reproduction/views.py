@@ -1,12 +1,19 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from reproduction.filters import PregnancyFilterSet
-from reproduction.models import Pregnancy
-from reproduction.serializers import PregnancySerializer
-from users.permissions import IsFarmManager, IsFarmOwner, IsFarmWorker, IsAssistantFarmManager, IsTeamLeader
+from reproduction.filters import PregnancyFilterSet, HeatFilterSet
+from reproduction.models import Pregnancy, Heat
+from reproduction.serializers import PregnancySerializer, HeatSerializer
+from users.permissions import (
+    IsFarmManager,
+    IsFarmOwner,
+    IsFarmWorker,
+    IsAssistantFarmManager,
+    IsTeamLeader,
+)
 
 
 class PregnancyViewSet(viewsets.ModelViewSet):
@@ -52,7 +59,13 @@ class PregnancyViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "update", "partial_update", "destroy"]:
             permission_classes = [IsFarmManager | IsFarmOwner]
         else:
-            permission_classes = [IsFarmWorker | IsTeamLeader | IsAssistantFarmManager | IsFarmManager | IsFarmOwner]
+            permission_classes = [
+                IsFarmWorker
+                | IsTeamLeader
+                | IsAssistantFarmManager
+                | IsFarmManager
+                | IsFarmOwner
+            ]
         return [permission() for permission in permission_classes]
 
     def list(self, request, *args, **kwargs):
@@ -77,8 +90,52 @@ class PregnancyViewSet(viewsets.ModelViewSet):
             else:
                 # If no query parameters are provided, and there are no pregnancy records in the database
                 return Response(
-                    {"detail": "No Pregnancy records found."},
-                    status=status.HTTP_200_OK
+                    {"detail": "No Pregnancy records found."}, status=status.HTTP_200_OK
+                )
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class HeatViewSet(viewsets.ModelViewSet):
+    queryset = Heat.objects.all()
+    serializer_class = HeatSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = HeatFilterSet
+    ordering_fields = ["-observation_time"]
+
+    def get_permissions(self):
+        if self.action == "create":
+            permission_classes = [
+                IsFarmWorker | IsAssistantFarmManager | IsFarmManager | IsFarmOwner
+            ]
+        else:
+            permission_classes = [IsAssistantFarmManager | IsFarmManager | IsFarmOwner]
+        return [permission() for permission in permission_classes]
+
+    def partial_update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PATCH")
+
+    def update(self, request, *args, **kwargs):
+        raise MethodNotAllowed("PUT")
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed("DELETE")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            if request.query_params:
+                return Response(
+                    {"detail": "No heat records found matching the provided filters."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            else:
+                return Response(
+                    {"detail": "No heat records found in the farm yet."},
+                    status=status.HTTP_200_OK,
                 )
 
         serializer = self.get_serializer(queryset, many=True)
