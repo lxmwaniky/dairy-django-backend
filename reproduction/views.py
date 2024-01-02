@@ -143,7 +143,7 @@ class HeatViewSet(viewsets.ModelViewSet):
                 IsFarmWorker | IsAssistantFarmManager | IsFarmManager | IsFarmOwner
             ]
         else:
-            permission_classes = [IsFarmWorker | IsTeamLeader | IsAssistantFarmManager | IsFarmManager | IsFarmOwner]
+            permission_classes = [IsAssistantFarmManager | IsFarmManager | IsFarmOwner]
         return [permission() for permission in permission_classes]
 
     def partial_update(self, request, *args, **kwargs):
