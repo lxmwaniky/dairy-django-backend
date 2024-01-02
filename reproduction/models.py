@@ -1,9 +1,10 @@
 from django.db import models
+from django.utils import timezone
 
 from core.models import Cow
 from reproduction.choices import PregnancyStatusChoices, PregnancyOutcomeChoices
 from reproduction.managers import PregnancyManager
-from reproduction.validators import PregnancyValidator
+from reproduction.validators import PregnancyValidator, HeatValidator
 
 
 class Pregnancy(models.Model):
@@ -80,10 +81,7 @@ class Pregnancy(models.Model):
         PregnancyValidator.validate_cow_availability_status(self.cow)
         PregnancyValidator.validate_dates(
             self.start_date,
-            self.pregnancy_status,
             self.date_of_calving,
-            self.pregnancy_scan_date,
-            self.pregnancy_failed_date,
         )
         PregnancyValidator.validate_pregnancy_status(
             self.pregnancy_status, self.start_date, self.pregnancy_failed_date, self.pregnancy_duration
@@ -91,6 +89,62 @@ class Pregnancy(models.Model):
         PregnancyValidator.validate_outcome(
             self.pregnancy_outcome, self.pregnancy_status, self.date_of_calving
         )
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides the save method to ensure validation before saving.
+        """
+        self.clean()
+        super().save(*args, **kwargs)
+
+
+class Heat(models.Model):
+    """
+    Represents a record of heat observation in a cow.
+
+    Attributes:
+    - `observation_time` (datetime): The time of heat observation.
+    - `cow` (Cow): The cow associated with the heat observation.
+
+    Methods:
+    - `__str__`: Returns a string representation of the heat record.
+
+    Overrides:
+    - `clean`: Performs validation checks before saving the heat record.
+    - `save`: Overrides the save method to ensure validation before saving.
+
+    Raises:
+    - `ValidationError`: If heat record validation fails.
+    """
+
+    observation_time = models.DateTimeField(default=timezone.now, editable=False)
+    cow = models.ForeignKey(Cow, on_delete=models.CASCADE, related_name="heat_records")
+
+    def __str__(self):
+        """
+        Returns a string representation of the heat record.
+        """
+        return f"Heat record for cow {self.cow.tag_number} on {self.observation_time}"
+
+    def clean(self):
+        """
+        Performs validation checks before saving the heat record.
+
+        Raises:
+        - `ValidationError`: If heat record validation fails.
+        """
+        HeatValidator.validate_pregnancy(self.cow)
+        HeatValidator.validate_production_status(self.cow)
+        HeatValidator.validate_dead(self.cow)
+        HeatValidator.validate_gender(self.cow)
+        HeatValidator.validate_within_60_days_after_calving(
+            self.cow, self.observation_time
+        )
+        HeatValidator.validate_within_21_days_of_previous_heat(
+            self.cow, self.observation_time
+        )
+        HeatValidator.validate_min_age(self.cow)
+        HeatValidator.validate_already_in_heat(self.cow)
 
     def save(self, *args, **kwargs):
         """

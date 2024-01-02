@@ -155,3 +155,21 @@ def setup_pregnancy_data():
     pregnancy_data = {"cow": cow.id, "pregnancy_status": PregnancyStatusChoices.CONFIRMED,
                       "start_date": todays_date - timedelta(days=270)}
     return pregnancy_data
+
+
+@pytest.fixture
+def setup_cows():
+    """
+    Fixture to create a sample cows object for testing.
+    """
+    general_cow = {
+        "name": "General Cow",
+        "breed": {"name": CowBreedChoices.AYRSHIRE},
+        "date_of_birth": todays_date - timedelta(days=370),
+        "gender": SexChoices.FEMALE,
+        "availability_status": CowAvailabilityChoices.ALIVE,
+        "current_pregnancy_status": CowPregnancyChoices.OPEN,
+        "category": CowCategoryChoices.HEIFER,
+        "current_production_status": CowProductionStatusChoices.OPEN,
+    }
+    return general_cow

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from reproduction.models import Pregnancy
+from reproduction.models import Pregnancy, Heat
 
 
 class PregnancySerializer(serializers.ModelSerializer):
@@ -57,3 +57,37 @@ class PregnancySerializer(serializers.ModelSerializer):
         fields = ("id", "cow", "start_date", "date_of_calving", "pregnancy_status", "pregnancy_notes",
                   "calving_notes", "pregnancy_scan_date", "pregnancy_failed_date", "pregnancy_outcome",
                   "pregnancy_duration", "due_date")
+
+
+class HeatSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Heat model.
+
+    Fields:
+    - `id`: A read-only field representing the unique identifier of the heat observation.
+    - `cow`: A nested serializer field representing the cow associated with the heat observation.
+    - `observation_time`: A datetime field representing the time of the heat observation.
+
+    Meta:
+    - `model`: The Heat model for which the serializer is defined.
+    - `fields`: The fields to include in the serialized representation.
+
+    Usage:
+        Use this serializer to convert Heat model instances to JSON representations and vice versa.
+
+    Example:
+        ```
+        class Heat(models.Model):
+            cow = models.ForeignKey(Cow, on_delete=models.CASCADE)
+            observation_time = models.DateTimeField()
+
+        class HeatSerializer(serializers.ModelSerializer):
+            class Meta:
+                model = Heat
+                fields = ("id", "cow", "observation_time")
+        ```
+    """
+
+    class Meta:
+        model = Heat
+        fields = ("id", "cow", "observation_time")

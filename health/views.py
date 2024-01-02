@@ -110,7 +110,7 @@ class CullingRecordViewSet(viewsets.ModelViewSet):
         - MethodNotAllowed: When attempting a partial update.
 
         """
-        raise MethodNotAllowed("PUT")
+        raise MethodNotAllowed("PATCH")
 
     def update(self, request, *args, **kwargs):
         """
