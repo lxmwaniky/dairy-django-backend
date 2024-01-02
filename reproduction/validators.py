@@ -1,10 +1,16 @@
 from datetime import timedelta
 
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-from core.choices import CowPregnancyChoices, CowAvailabilityChoices
+from core.choices import (
+    CowPregnancyChoices,
+    CowAvailabilityChoices,
+    CowProductionStatusChoices,
+)
 from core.utils import todays_date
 from reproduction.choices import PregnancyStatusChoices, PregnancyOutcomeChoices
+from users.choices import SexChoices
 
 
 class PregnancyValidator:
@@ -15,10 +21,14 @@ class PregnancyValidator:
     - `validate_age(age, start_date, cow)`: Validates the age of the cow, start date, and pregnancy threshold.
     - `validate_cow_current_pregnancy_status(cow)`: Validates the current pregnancy status of the cow.
     - `validate_cow_availability_status(cow)`: Validates the availability status of the cow.
-    - `validate_pregnancy_status(pregnancy_status, start_date, pregnancy_failed_date, pregnancy_duration)`: Validates the pregnancy status.
-    - `validate_dates(start_date, pregnancy_status, date_of_calving, pregnancy_scan_date, pregnancy_failed_date)`: Validates various date-related constraints.
-    - `validate_scan_date_and_start_date(pregnancy_scan_date, start_date)`: Validates the scan date in relation to the start date.
-    - `validate_failed_date_and_start_date(pregnancy_failed_date, start_date, pregnancy_status)`: Validates the failed date in relation to the start date and pregnancy status.
+    - `validate_pregnancy_status(pregnancy_status, start_date, pregnancy_failed_date, pregnancy_duration)`:
+        Validates the pregnancy status.
+    - `validate_dates(start_date, pregnancy_status, date_of_calving, pregnancy_scan_date, pregnancy_failed_date)`:
+        Validates various date-related constraints.
+    - `validate_scan_date_and_start_date(pregnancy_scan_date, start_date)`: Validates the scan date in relation to
+        the start date.
+    - `validate_failed_date_and_start_date(pregnancy_failed_date, start_date, pregnancy_status)`:
+        Validates the failed date in relation to the start date and pregnancy status.
     - `validate_outcome(pregnancy_outcome, pregnancy_status, date_of_calving)`: Validates the pregnancy outcome.
 
     Each method raises a `ValidationError` with a specific error code and message if the validation fails.
@@ -150,13 +160,7 @@ class PregnancyValidator:
                 )
 
     @staticmethod
-    def validate_dates(
-        start_date,
-        pregnancy_status,
-        date_of_calving,
-        pregnancy_scan_date,
-        pregnancy_failed_date,
-    ):
+    def validate_dates(start_date, date_of_calving):
         """
         Validates various date-related constraints.
 
@@ -348,3 +352,159 @@ class PregnancyValidator:
             raise ValidationError(
                 "Provide the pregnancy outcome", code="missing_outcome"
             )
+
+
+class HeatValidator:
+    """
+    Provides validation methods for the Heat model.
+
+    Methods:
+    - `validate_pregnancy(cow)`: Validates that the cow is not already pregnant.
+    - `validate_production_status(cow)`: Validates that the cow is in an open production status.
+    - `validate_already_in_heat(cow)`: Validates that the cow is not already in heat within the past day.
+    - `validate_dead(cow)`: Validates that the cow is not dead.
+    - `validate_gender(cow)`: Validates that the heat can only be observed in female cows.
+    - `validate_within_60_days_after_calving(cow, observation_time)`: Validates that the cow is not in heat within
+        60 days after calving.
+    - `validate_within_21_days_of_previous_heat(cow, observation_time)`: Validates that the cow is not in heat within
+        21 days of the previous heat observation.
+    - `validate_min_age(cow)`: Validates that the cow is at least 12 months old to be in heat.
+
+    Each method raises a `ValidationError` with a specific error code and message if the validation fails.
+    """
+
+    @staticmethod
+    def validate_pregnancy(cow):
+        """
+        Validates that the cow is not already pregnant.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is already pregnant.
+        """
+        if cow.current_pregnancy_status == CowPregnancyChoices.PREGNANT:
+            raise ValidationError("Cow is already pregnant.", code="cow_already_pregnant")
+
+    @staticmethod
+    def validate_production_status(cow):
+        """
+        Validates that the cow is in an open production status.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is not in an open production status.
+        """
+        if cow.current_production_status != CowProductionStatusChoices.OPEN:
+            raise ValidationError(
+                f"Cow must be open and ready to be served. This cow is marked as {cow.current_production_status}",
+                code="invalid_production_status",
+            )
+
+    @staticmethod
+    def validate_already_in_heat(cow):
+        """
+        Validates that the cow is not already in heat within the past day.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is already in heat within the past day.
+        """
+        if cow.heat_records.filter(
+            observation_time__range=(
+                timezone.now() - timedelta(days=1),
+                timezone.now(),
+            )
+        ).exists():
+            raise ValidationError("Cow is already in heat within the past day.", code="already_in_heat")
+
+    @staticmethod
+    def validate_dead(cow):
+        """
+        Validates that the cow is not dead.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is dead.
+        """
+        if cow.availability_status == CowAvailabilityChoices.DEAD:
+            raise ValidationError("Cow is dead and cannot be in heat.", code="dead_cow")
+
+    @staticmethod
+    def validate_gender(cow):
+        """
+        Validates that the heat can only be observed in female cows.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow's gender is not female.
+        """
+        if cow.gender == SexChoices.MALE:
+            raise ValidationError("Heat can only be observed in female cows.", code="invalid_gender")
+
+    @staticmethod
+    def validate_within_60_days_after_calving(cow, observation_time):
+        """
+        Validates that the cow is not in heat within 60 days after calving.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+        - `observation_time` (datetime): The time of heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is in heat within 60 days after calving.
+        """
+        has_pregnancy_records = cow.pregnancies.exists()
+
+        if has_pregnancy_records:
+            latest_pregnancy = cow.pregnancies.latest("-date_of_calving")
+            if (
+                cow.current_pregnancy_status == CowPregnancyChoices.CALVED
+                and (observation_time.date() - latest_pregnancy.date_of_calving) < timedelta(days=60)
+            ):
+                raise ValidationError("Cow cannot be in heat within 60 days after calving.",
+                                      code="in_heat_after_calving")
+
+    @staticmethod
+    def validate_within_21_days_of_previous_heat(cow, observation_time):
+        """
+        Validates that the cow is not in heat within 21 days of the previous heat observation.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+        - `observation_time` (datetime): The time of heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is in heat within 21 days of the previous heat observation.
+        """
+        if cow.heat_records.filter(
+            observation_time__range=(
+                observation_time - timedelta(days=21),
+                observation_time,
+            )
+        ).exists():
+            raise ValidationError("Cow cannot be in heat within 21 days of previous heat observation.",
+                                  code="in_heat_within_21_days")
+
+    @staticmethod
+    def validate_min_age(cow):
+        """
+        Validates that the cow is at least 12 months old to be in heat.
+
+        Args:
+        - `cow` (Cow): The cow associated with the heat observation.
+
+        Raises:
+        - `ValidationError`: If the cow is not at least 12 months old.
+        """
+        if cow.age < 365:
+            raise ValidationError("Cow must be at least 12 months old to be in heat.", code="invalid_age_for_heat")
