@@ -47,7 +47,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(null=True, unique=True)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    phone_number = PhoneNumberField(max_length=13, unique=True, null=True)
+    phone_number = PhoneNumberField(max_length=15, unique=True, null=True)
     sex = models.CharField(choices=SexChoices.choices, max_length=6)
     is_farm_owner = models.BooleanField(default=False)
     is_farm_manager = models.BooleanField(default=False)
