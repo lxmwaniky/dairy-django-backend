@@ -1,4 +1,5 @@
 from django.db import models
+from phonenumber_field.modelfields import PhoneNumberField
 
 from core.choices import (
     CowAvailabilityChoices,
@@ -156,7 +157,8 @@ class Cow(models.Model):
                 self.age,
                 self.current_pregnancy_status,
                 self.availability_status,
-                self.gender, )
+                self.gender,
+            )
             CowValidator.validate_uniqueness(self.name)
             CowValidator.validate_cow_age(self.age, self.date_of_birth)
             CowValidator.validate_gender_update(self.pk, self.gender)
@@ -190,3 +192,35 @@ class Cow(models.Model):
         """
         self.clean()
         super().save(*args, **kwargs)
+
+
+class Inseminator(models.Model):
+    """
+    Represents an individual inseminator involved in the breeding process.
+
+    Attributes:
+    - `first_name` (str): The first name of the inseminator.
+    - `last_name` (str): The last name of the inseminator.
+    - `phone_number` (str): The phone number of the inseminator (unique).
+    - `sex` (str): The gender of the inseminator.
+    - `company` (str): The company or affiliation of the inseminator (nullable).
+    - `license_number` (str): The license number of the inseminator (unique, nullable).
+
+    Methods:
+    - `__str__`: Returns a string representation of the inseminator.
+
+    Usage:
+        Use this class to represent and manage information about inseminators involved in the breeding process.
+    """
+    first_name = models.CharField(max_length=20)
+    last_name = models.CharField(max_length=20)
+    phone_number = PhoneNumberField(max_length=15, unique=True)
+    sex = models.CharField(choices=SexChoices.choices, max_length=6)
+    company = models.CharField(max_length=50, null=True)
+    license_number = models.CharField(max_length=25, unique=True, null=True)
+
+    def __str__(self):
+        """
+        Returns a string representation of the inseminator.
+        """
+        return f"{self.first_name} {self.last_name}"
