@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from core.models import Cow, CowBreed
+from core.models import Cow, CowBreed, Inseminator
 
 
 class CowBreedFilterSet(filters.FilterSet):
@@ -121,3 +121,35 @@ class CowFilterSet(filters.FilterSet):
             "current_production_status",
             "name",
         ]
+
+
+class InseminatorFilterSet(filters.FilterSet):
+    """
+    Filter set for querying Inseminator instances based on specific criteria.
+
+    Filters:
+    - `first_name`: A case-insensitive partial match filter for the first name of the inseminator.
+    - `last_name`: A case-insensitive partial match filter for the last name of the inseminator.
+    - `company`: A case-insensitive partial match filter for the company of the inseminator.
+
+    Meta:
+    - `model`: The Inseminator model for which the filter set is defined.
+    - `fields`: The fields available for filtering, including 'first_name', 'last_name', and 'company'.
+
+    Usage:
+        Use this filter set to apply filters when querying the list of Inseminator instances.
+        For example, to retrieve all inseminators with a specific first name.
+
+    Example:
+        ```
+        /api/inseminators/?first_name=john
+        ```
+    """
+
+    first_name = filters.CharFilter(field_name="first_name", lookup_expr="icontains")
+    last_name = filters.CharFilter(field_name="last_name", lookup_expr="icontains")
+    company = filters.CharFilter(field_name="company", lookup_expr="icontains")
+
+    class Meta:
+        model = Inseminator
+        fields = ["first_name", "last_name", "company"]

@@ -3,9 +3,9 @@ from rest_framework import viewsets, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.response import Response
 
-from core.filters import CowBreedFilterSet, CowFilterSet
-from core.models import Cow, CowBreed
-from core.serializers import CowBreedSerializer, CowSerializer
+from core.filters import CowBreedFilterSet, CowFilterSet, InseminatorFilterSet
+from core.models import Cow, CowBreed, Inseminator
+from core.serializers import CowBreedSerializer, CowSerializer, InseminatorSerializer
 from users.permissions import (
     IsFarmOwner,
     IsFarmManager,
@@ -162,6 +162,65 @@ class CowViewSet(viewsets.ModelViewSet):
                 # If no query parameters are provided, and there are no cow records in the database
                 return Response(
                     {"detail": "No cow records found in the farm yet."},
+                    status=status.HTTP_200_OK,
+                )
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class InseminatorViewset(viewsets.ModelViewSet):
+    """
+    ViewSet to handle operations related to inseminators.
+
+    Provides CRUD functionality for inseminators.
+
+    Actions:
+    - list: Get a list of inseminator records based on applied filters.
+           Returns a 404 response if no inseminator records match the provided filters,
+           and a 200 response with an empty list if there are no inseminator records in the database.
+    - retrieve: Retrieve details of a specific inseminator record.
+    - create: Create a new inseminator record.
+    - update: Update an existing inseminator record.
+    - partial_update: Partially update an existing inseminator record.
+    - destroy: Delete an existing inseminator record.
+
+    Serializer class used for request/response data: InseminatorSerializer.
+
+    Permissions:
+    - Accessible to farm managers and farm owners only.
+
+    """
+
+    queryset = Inseminator.objects.all()
+    serializer_class = InseminatorSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = InseminatorFilterSet
+    ordering_fields = ["license_number", "first_name", "last_name"]
+    permission_classes = [IsAssistantFarmManager | IsFarmManager | IsFarmOwner]
+
+    def list(self, request, *args, **kwargs):
+        """
+        List inseminator records based on applied filters.
+
+        Returns a 404 response if no inseminator records match the provided filters,
+        and a 200 response with an empty list if there are no inseminator records in the database.
+
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if not queryset.exists():
+            if request.query_params:
+                # If query parameters are provided, but there are no matching inseminator records
+                return Response(
+                    {"detail": "No Inseminator record(s) found matching the provided filters."},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            else:
+                # If no query parameters are provided, and there are no inseminator records in the database
+                return Response(
+                    {"detail": "No Inseminator records found."},
                     status=status.HTTP_200_OK,
                 )
 
