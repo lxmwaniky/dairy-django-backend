@@ -1,6 +1,7 @@
+from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
-from core.models import Cow, CowBreed
+from core.models import Cow, CowBreed, Inseminator
 
 
 class CowBreedSerializer(serializers.ModelSerializer):
@@ -101,3 +102,45 @@ class CowSerializer(serializers.ModelSerializer):
         for field in fields_to_exclude:
             validated_data.pop(field, None)
         return super().update(instance, validated_data)
+
+
+class InseminatorSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Inseminator model.
+
+    Fields:
+    - `phone_number`: A field representing the phone number of the inseminator.
+    - And more...
+
+    Meta:
+    - `model`: The Inseminator model for which the serializer is defined.
+    - `fields`: The fields to include in the serialized representation.
+
+    Usage:
+        Use this serializer to convert Inseminator model instances to JSON representations
+        and vice versa. It includes validation for the 'phone_number' field.
+
+    Example:
+        ```
+        class Inseminator(models.Model):
+            first_name = models.CharField(max_length=20)
+            last_name = models.CharField(max_length=20)
+            phone_number = PhoneNumberField(max_length=15, unique=True)
+            sex = models.CharField(choices=SexChoices.choices, max_length=6)
+            company = models.CharField(max_length=50, null=True)
+            license_number = models.CharField(max_length=25, unique=True, null=True)
+
+        class InseminatorSerializer(serializers.ModelSerializer):
+            phone_number = PhoneNumberField()
+
+            class Meta:
+                model = Inseminator
+                fields = ("first_name", "last_name", "phone_number", "sex", "company", "license_number")
+        ```
+    """
+
+    phone_number = PhoneNumberField()
+
+    class Meta:
+        model = Inseminator
+        fields = ("first_name", "last_name", "phone_number", "sex", "company", "license_number")
